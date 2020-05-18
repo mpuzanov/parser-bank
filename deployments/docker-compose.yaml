@@ -1,0 +1,14 @@
+version: "3.7"
+services:
+  # parser-bank service
+  parser-bank:
+    image: puzanovma/parser-bank
+    container_name: parser-bank    
+    build:
+      context: ../.
+      dockerfile: ./deployments/parser-bank.Dockerfile
+    environment: 
+      - TZ=Europe/Samara        
+    ports:
+      - 7777:7777
+    restart: on-failure
