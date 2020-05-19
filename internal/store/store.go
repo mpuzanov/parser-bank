@@ -31,7 +31,7 @@ func (s *Store) Open() error {
 func LoadFormatBank() (*domain.FormatBanks, error) {
 	var formatBanks domain.FormatBanks
 
-	// jsonFile, err := os.Open("./data/format.json")
+	// jsonFile, err := os.Open("./configs/format.json")
 	// if err != nil {
 	// 	fmt.Println(err)
 	// }

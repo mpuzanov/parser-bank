@@ -8,7 +8,6 @@ import (
 	"github.com/mpuzanov/parser-bank/internal/domain"
 	"github.com/mpuzanov/parser-bank/internal/store"
 	"go.uber.org/zap"
-	//"go.uber.org/zap/zapcore"
 )
 
 var (
@@ -26,9 +25,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestDetectFormatBank(t *testing.T) {
-	//conf := zap.NewDevelopmentConfig() // console DebugLevel stderr
-	//conf.Level = zap.NewAtomicLevelAt(zap.InfoLevel) // меняем уровень
-	//loggerTest, _ := conf.Build()
 	loggerTest, _ := zap.NewProduction() //InfoLevel json stderr
 	//loggerTest, _ := zap.NewDevelopment() console DebugLevel stderr
 	//loggerTest := zap.NewExample() // json Stdout DebugLevel
@@ -40,7 +36,7 @@ func TestDetectFormatBank(t *testing.T) {
 		err  error
 	}{
 		{
-			desc: "Тест 1",
+			desc: "Тест Почта_D8L1A3S5С6",
 			text: `
 			19;7536.12;30.08.2018;03.09.2018;
 			6149829;;Пушкинская, 240А, 50;;491;6.38;1731;30.08.2018;426008;42600805;
@@ -53,7 +49,7 @@ func TestDetectFormatBank(t *testing.T) {
 			err:  nil,
 		},
 		{
-			desc: "Тест 2",
+			desc: "Тест Сбербанк_D3L7S5C6A8",
 			text: `
 			~Плательщик: Западно-Уральский банк Сбербанка России
 			~Счет плательщика: 30233810749000600001
@@ -70,7 +66,7 @@ func TestDetectFormatBank(t *testing.T) {
 			err:  nil,
 		},
 		{
-			desc: "Тест 3",
+			desc: "Тест Сбербанк_D1L6A8S10C12",
 			text: `
 			25-09-2019;07-37-41;8618;8618999V;300863541515;910000667;КУМАЧЕВА ВЕРА АЛЕКСАНДРОВНА;ИЖЕВСК, Т.БАРАМЗИНОЙ, Д. 7А, КВ. 90;0819;3989,76;3945,87;43,89;5
 			25-09-2019;07-46-35;8618;8618999V;350863558941;910000413;СУХИХ НАТАЛЬЯ АНАТОЛЬЕВНА;ИЖЕВСК, Т.БАРАМЗИНОЙ, Д. 7А, КВ. 118;0819;3566,25;3527,02;39,23;5
@@ -83,7 +79,7 @@ func TestDetectFormatBank(t *testing.T) {
 			err:  nil,
 		},
 		{
-			desc: "Тест 4",
+			desc: "Тест Ижкомбанк_D2L4S3A5",
 			text: `
 			~Плательщик: АКБ "Ижкомбанк" (ПАО)
 			~Счет плательщика: 40911810602201400221
@@ -103,7 +99,7 @@ func TestDetectFormatBank(t *testing.T) {
 			err:  nil,
 		},
 		{
-			desc: "Тест 5",
+			desc: "Тест Сбербанк_D1L6F7A8S9C11",
 			text: `
 			01-10-2019;17-35-18;8618;8618999V;550319691514;20040341;КОРОБОВА СВЕТЛАНА ВЛАДИМИРОВНА;ИЖЕВСК, ВОСТОЧНАЯ, Д. 4, КВ. 34;10943,21;10735,29;207,92;
 			01-10-2019;19-50-48;8618;8618999V;400805839118;20080161;НАГИМОВ МАРСЕЛЬ ДАМИРОВИЧ;ИЖЕВСК, ВОСТОЧНАЯ, Д. 8, КВ. 16;8254,77;8097,93;156,84;

@@ -1,7 +1,6 @@
 package config
 
 import (
-	"log"
 	"net"
 	"strings"
 
@@ -27,24 +26,24 @@ func LoadConfig(filePath string) (*Config, error) {
 	viper.SetDefault("http_port", "7777")
 
 	if filePath != "" {
-		log.Printf("Parsing config: %s\n", filePath)
+		logger.LogSugar.Debugf("Parsing config: %s", filePath)
 		viper.SetConfigFile(filePath)
 		viper.SetConfigType("yaml")
-		//log.Println(viper.ConfigFileUsed())
+		//logger.LogSugar.Debug(viper.ConfigFileUsed())
 		err := viper.ReadInConfig()
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		log.Println("Config file is not specified.")
+		logger.LogSugar.Debug("Config file is not specified.")
 	}
-	//log.Println(viper.AllSettings())
+	//logger.LogSugar.Debug(viper.AllSettings())
 
 	var config Config
 	if err := viper.Unmarshal(&config); err != nil {
 		return nil, err
 	}
 	config.HTTPAddr = net.JoinHostPort(config.Host, config.Port)
-	//log.Println(config)
+	//logger.LogSugar.Debug(config)
 	return &config, nil
 }

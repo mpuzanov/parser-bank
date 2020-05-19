@@ -21,4 +21,4 @@ vendor
 go.sum
 
 /bin
-/sysmonitor
+./parser-bank

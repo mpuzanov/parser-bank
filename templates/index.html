@@ -29,7 +29,7 @@
     </nav>
       
       <div class="container">
-            <h1>Загрузка платежей из банков в текстовом формате.</h1>
+            <h1>Загрузка платежей из банков в текстовом формате</h1>
       </div>
 
       <div class="container">
@@ -44,10 +44,13 @@
                 </div>
             </div>
         </form>
+
+          <div class="message">{{ .UploadFiles }}</div>
+
           <p id="btn-json-browse"></p>
           <pre id="json-renderer" class="json-body">
             
-                <textarea id="json-input" autocomplete="off" class="form-control" >{{ . }}</textarea>
+                <textarea id="json-input" autocomplete="off" class="form-control" >{{ .ContentJSON }}</textarea>
 
           </pre>
   

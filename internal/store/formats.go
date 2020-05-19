@@ -1,5 +1,6 @@
 package store
 
+// formatData список форматов для анализа платежей
 var formatData = `
 { "dataset": [
     {

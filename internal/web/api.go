@@ -3,19 +3,30 @@ package web
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"html/template"
 	"io"
 	"net/http"
 	"os"
 
+	"github.com/mpuzanov/parser-bank/internal/domain"
 	"github.com/mpuzanov/parser-bank/internal/parser"
+	"github.com/mpuzanov/parser-bank/pkg/logger"
 	"go.uber.org/zap"
 )
 
 var (
 	fileTemplate = "./templates/index.html"
-	pathUpload   = "./data/"
+	pathUpload   = "./upload_files/"
 )
+
+func init() {
+	if _, err := os.Stat(pathUpload); os.IsNotExist(err) {
+		//TODO надо попробовать создать каталог
+		logger.LogSugar.Error("dir not exist", zap.String("dir", pathUpload), zap.Error(err))
+		os.Exit(1)
+	}
+}
 
 func (s *myHandler) configRouter() {
 	s.router.Use(s.logRequest)
@@ -37,45 +48,48 @@ func (s *myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 
 // UploadData .
 func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
-	if req.Method == "GET" {
+
+	switch req.Method {
+
+	case "GET":
 		s.logger.Debug("GET")
 		t, err := template.ParseFiles(fileTemplate)
 		if err != nil {
 			s.logger.Error("Error:", zap.Error(err))
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
 		t.Execute(w, nil)
 
-	} else if req.Method == "POST" {
+	case "POST":
 		s.logger.Debug("POST")
-		file, handler, err := req.FormFile("uploadfile")
+
+		reader, err := req.MultipartReader()
 		if err != nil {
-			s.logger.Error("Error:", zap.Error(err))
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+		strFiles := ""
+		count := 0
+		valuesTotal := []domain.Payments{}
+		for {
+			part, err := reader.NextPart()
+			if err == io.EOF {
+				break
+			}
 
-		defer file.Close()
-		if err != nil {
-			s.logger.Error("Error while Posting data")
-			t, _ := template.ParseFiles(fileTemplate)
-			t.Execute(w, nil)
-		} else {
-			s.logger.Info("OpenFile", zap.String("Filename:", handler.Filename))
-			if _, err := os.Stat(pathUpload); os.IsNotExist(err) {
-				s.logger.Error("dir not exist", zap.String("dir", pathUpload), zap.Error(err))
+			if part.FileName() == "" {
+				continue
+			}
+
+			blobPath := pathUpload + part.FileName()
+			dst, err := os.Create(blobPath)
+			if err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-			blobPath := pathUpload + handler.Filename
-			f, err := os.OpenFile(blobPath, os.O_WRONLY|os.O_CREATE, 0666)
-			if err != nil {
-				s.logger.Error("OpenFile", zap.Error(err))
-				t, _ := template.ParseFiles(fileTemplate)
-				t.Execute(w, nil)
-			}
 			defer func() {
-				f.Close()
+				dst.Close()
 				err = os.Remove(blobPath)
 				if err != nil {
 					s.logger.Error("Remove", zap.Error(err))
@@ -83,44 +97,50 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 					s.logger.Debug("File has been deleted successfully.", zap.String("fileName", blobPath))
 				}
 			}()
-			io.Copy(f, file)
+
+			if _, err := io.Copy(dst, part); err != nil {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+
 			values, err := parser.ReadFile(blobPath, &s.store.FormatBanks, s.logger)
 			if err != nil {
 				s.logger.Error("Error:", zap.Error(err))
 				http.Error(w, err.Error(), 500)
 				return
 			}
-
+			count++
 			s.logger.Info("", zap.Int("Count values", len(values)))
-			parsedJSON, err := json.Marshal(values)
-			if err != nil {
-				s.logger.Error("Error json.Marshal", zap.Error(err))
-			}
-			jsData, err := Prettyprint(parsedJSON)
-			if err != nil {
-				s.logger.Error("Error Prettyprint", zap.Error(err))
-			}
-			//fmt.Println(sting(jsData))
+			strFiles += fmt.Sprintf("%d. %s - кол-во платежей: %d<br>", count, part.FileName(), len(values))
 
-			t, err := template.ParseFiles(fileTemplate)
-			if err != nil {
-				s.logger.Error("Error:", zap.Error(err))
-				http.Error(w, err.Error(), 500)
-				return
-			}
-			t.Execute(w, string(jsData))
+			valuesTotal = append(valuesTotal, values...)
 		}
-	} else {
-		s.logger.Error("Error while Posting data")
+		strFiles += fmt.Sprintf("Итого платежей: %d<br>", len(valuesTotal))
+
+		parsedJSON, err := json.Marshal(valuesTotal)
+		if err != nil {
+			s.logger.Error("Error json.Marshal", zap.Error(err))
+		}
+		jsData, err := Prettyprint(parsedJSON)
+		if err != nil {
+			s.logger.Error("Error Prettyprint", zap.Error(err))
+		}
+		//fmt.Println(sting(jsData))
+
 		t, err := template.ParseFiles(fileTemplate)
 		if err != nil {
 			s.logger.Error("Error:", zap.Error(err))
-			http.Error(w, err.Error(), 500)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		t.Execute(w, nil)
+		data := struct {
+			UploadFiles template.HTML
+			ContentJSON string
+		}{UploadFiles: template.HTML(strFiles), ContentJSON: string(jsData)}
+		t.Execute(w, data)
+	default:
+		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
-
 }
 
 func (s *myHandler) logRequest(next http.Handler) http.Handler {

@@ -2,7 +2,6 @@ package web
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"os"
 	"os/signal"
@@ -22,12 +21,12 @@ type myHandler struct {
 }
 
 // Start .
-func Start(conf *config.Config, logger *zap.Logger) error {
+func Start(conf *config.Config, log *zap.Logger) error {
 
 	handler := &myHandler{
 		router: mux.NewRouter(),
-		logger: logger,
-		store: store.New()  ,
+		logger: log,
+		store:  store.New(),
 	}
 	handler.configRouter()
 
@@ -43,27 +42,26 @@ func Start(conf *config.Config, logger *zap.Logger) error {
 	}
 
 	//запускаем веб-сервер
-	go func() {
+	go func(log *zap.Logger) {
 		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			log.Fatalf("listen: %s\n", err)
+			log.Fatal("listen", zap.Error(err))
 		}
-	}()
-	log.Printf("Server http started: %s, file log: %s\n", srv.Addr, conf.Log.File)
-	logger.Info("Starting Http server", zap.String("address", srv.Addr))
+	}(log)
+	log.Info("Starting Http server", zap.String("address", srv.Addr))
 
 	done := make(chan os.Signal, 1)
 	signal.Notify(done, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-done
-	log.Print("Server stopped")
+	log.Info("Server stopped")
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer func() {
 		cancel()
 	}()
 	if err := srv.Shutdown(ctx); err != nil {
-		log.Fatalf("Server shutdown failed:%+v", err)
+		log.Fatal("Server shutdown failed", zap.Error(err))
 	}
-	log.Println("Shutdown done")
+	log.Info("Shutdown done")
 	os.Exit(0)
 
 	return nil

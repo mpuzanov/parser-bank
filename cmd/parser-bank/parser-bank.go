@@ -1,8 +1,6 @@
 package main
 
 import (
-	"log"
-
 	"github.com/mpuzanov/parser-bank/internal/config"
 	"github.com/mpuzanov/parser-bank/internal/web"
 	"github.com/mpuzanov/parser-bank/pkg/logger"
@@ -15,11 +13,11 @@ func main() {
 	flag.Parse()
 	cfg, err := config.LoadConfig(cfgPath)
 	if err != nil {
-		log.Fatalf("Не удалось загрузить %s: %s", cfgPath, err)
+		logger.LogSugar.Fatalf("Не удалось загрузить %s: %s", cfgPath, err)
 	}
-	logger := logger.NewLogger(cfg.Log)
+	l := logger.NewLogger(cfg.Log)
 
-	if err := web.Start(cfg, logger); err != nil {
-		log.Fatal(err)
+	if err := web.Start(cfg, l); err != nil {
+		logger.LogSugar.Fatal(err)
 	}
 }

@@ -28,7 +28,7 @@ mod:
 	go mod tidy
 
 run:
-	@go run ${SOURCE} --config=configs/config-prod.yaml
+	@go run ${SOURCE} --config=configs/prod.yaml
 
 .PHONY: dockerbuild
 dockerbuild: 

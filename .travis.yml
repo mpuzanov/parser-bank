@@ -1,0 +1,23 @@
+language: go
+
+go:
+    - 1.14.x
+
+before_install:
+    - go get -d -v ./cmd/parser-bank
+
+install: true
+
+notifications:
+    email:
+      on_failure: always
+
+before_script:
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $GOPATH/bin v1.25.1
+
+services:
+    - docker
+
+script:
+    - golangci-lint run
+    - make test
