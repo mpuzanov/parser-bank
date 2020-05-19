@@ -5,13 +5,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/mpuzanov/parser-bank/internal/domain"
+	"github.com/mpuzanov/parser-bank/internal/domain/model"
 	"github.com/mpuzanov/parser-bank/internal/store"
 	"go.uber.org/zap"
 )
 
 var (
-	fbStore domain.FormatBanks
+	fbStore model.FormatBanks
 )
 
 func TestMain(m *testing.M) {

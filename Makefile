@@ -19,6 +19,11 @@ GO_TEST_DIRS := $(shell \
 build: 
 	@go build -v -o ${APP} ${SOURCE}
 
+lint:
+	@goimports -w ${GO_SRC_DIRS}	
+	@gofmt -s -w ${GO_SRC_DIRS}
+	@golint ${GO_SRC_DIRS}
+
 test:
 	go test -v ${GO_TEST_DIRS}
 
