@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/mpuzanov/parser-bank/internal/domain"
+	"github.com/mpuzanov/parser-bank/internal/domain/model"
 	"github.com/mpuzanov/parser-bank/internal/parser"
 	"github.com/mpuzanov/parser-bank/pkg/logger"
 	"go.uber.org/zap"
@@ -22,9 +22,12 @@ var (
 
 func init() {
 	if _, err := os.Stat(pathUpload); os.IsNotExist(err) {
-		//TODO надо попробовать создать каталог
-		logger.LogSugar.Error("dir not exist", zap.String("dir", pathUpload), zap.Error(err))
-		os.Exit(1)
+		//надо попробовать создать каталог
+		err := os.Mkdir(pathUpload, 0777)
+		if err != nil {
+			logger.LogSugar.Error("dir not exist", zap.String("dir", pathUpload), zap.Error(err))
+			os.Exit(1)
+		}
 	}
 }
 
@@ -71,7 +74,7 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		}
 		strFiles := ""
 		count := 0
-		valuesTotal := []domain.Payments{}
+		valuesTotal := []model.Payments{}
 		for {
 			part, err := reader.NextPart()
 			if err == io.EOF {

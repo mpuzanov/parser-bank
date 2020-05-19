@@ -4,12 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/mpuzanov/parser-bank/internal/domain"
+	"github.com/mpuzanov/parser-bank/internal/domain/model"
 )
 
 // Store ...
 type Store struct {
-	FormatBanks domain.FormatBanks
+	FormatBanks model.FormatBanks
 }
 
 // New .
@@ -28,8 +28,8 @@ func (s *Store) Open() error {
 }
 
 // LoadFormatBank загрузить известные форматы реестров
-func LoadFormatBank() (*domain.FormatBanks, error) {
-	var formatBanks domain.FormatBanks
+func LoadFormatBank() (*model.FormatBanks, error) {
+	var formatBanks model.FormatBanks
 
 	// jsonFile, err := os.Open("./configs/format.json")
 	// if err != nil {

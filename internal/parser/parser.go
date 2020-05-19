@@ -2,7 +2,6 @@ package parser
 
 import (
 	"bufio"
-	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -11,19 +10,19 @@ import (
 	"strings"
 	"time"
 
-	"github.com/mpuzanov/parser-bank/internal/domain"
+	"github.com/mpuzanov/parser-bank/internal/domain/errors"
+	"github.com/mpuzanov/parser-bank/internal/domain/model"
 	"github.com/softlandia/cpd"
 	"go.uber.org/zap"
 )
 
 var layoutDate = "2006-01-02"
-var errFormat = errors.New("формат не подходит")
 
 // ReadFile .
-func ReadFile(filePath string, fbs *domain.FormatBanks, logger *zap.Logger) ([]domain.Payments, error) {
+func ReadFile(filePath string, fbs *model.FormatBanks, logger *zap.Logger) ([]model.Payments, error) {
 
 	//создаём выходную переменную
-	values := make([]domain.Payments, 0)
+	values := make([]model.Payments, 0)
 
 	//Определяем кодировку файла
 	codePage, _ := cpd.FileCodepageDetect(filePath)
@@ -86,8 +85,8 @@ func ReadFile(filePath string, fbs *domain.FormatBanks, logger *zap.Logger) ([]d
 }
 
 // detectFormatBank определить формат реестра платежей
-func detectFormatBank(r []byte, fbs *domain.FormatBanks, logger *zap.Logger) (*domain.FormatBank, error) {
-	var res domain.FormatBank
+func detectFormatBank(r []byte, fbs *model.FormatBanks, logger *zap.Logger) (*model.FormatBank, error) {
+	var res model.FormatBank
 
 	if len(fbs.FormatBanks) == 0 {
 		return &res, fmt.Errorf("Таблица форматов пуста")
@@ -108,7 +107,7 @@ func detectFormatBank(r []byte, fbs *domain.FormatBanks, logger *zap.Logger) (*d
 	return &res, nil
 }
 
-func checkBankReestr(r []byte, sf *domain.FormatBank, logger *zap.Logger) (bool, error) {
+func checkBankReestr(r []byte, sf *model.FormatBank, logger *zap.Logger) (bool, error) {
 	var err error
 	res := false
 	reader := bufio.NewReader(strings.NewReader(string(r)))
@@ -116,11 +115,9 @@ func checkBankReestr(r []byte, sf *domain.FormatBank, logger *zap.Logger) (bool,
 	for {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
-			//fmt.Println("EOF")
 			break
 		}
 		if err != nil {
-			//fmt.Println("error:", err)
 			return res, err
 		}
 		line = strings.TrimSpace(line)
@@ -141,9 +138,9 @@ func checkBankReestr(r []byte, sf *domain.FormatBank, logger *zap.Logger) (bool,
 	return res, err
 }
 
-// getPaymentsVal
-func getPaymentsVal(line string, sf *domain.FormatBank, logger *zap.Logger) (domain.Payments, error) {
-	var res domain.Payments
+// getPaymentsVal конвертируем строку файла в структуру платежа
+func getPaymentsVal(line string, sf *model.FormatBank, logger *zap.Logger) (model.Payments, error) {
+	var res model.Payments
 	var err error
 
 	record := strings.Split(line, sf.CharRazd)
@@ -153,91 +150,92 @@ func getPaymentsVal(line string, sf *domain.FormatBank, logger *zap.Logger) (dom
 	// 	logger.Sugar().Debugf("Field %d: %s", i, record[i])
 	// }
 	if countField < 4 {
-		return res, errors.New("мало полей")
-	} else {
-		//logger.Sugar().Debug("countField: ", countField)
-		// проверяем дату
-		if sf.DataPlatNo < countField {
-			tmpStr := record[sf.DataPlatNo-1]
-			layoutDate := fmt.Sprintf("02%s01%s2006", sf.Dateseparator, sf.Dateseparator)
-			res.Date, err = time.Parse(layoutDate, tmpStr)
-			if err != nil {
-				return res, err
-			}
-			logger.Sugar().Debug("date ", res.Date)
-		} else {
-			return res, err
-		}
-		// проверяем сумму
-		if sf.SummaNo < countField {
-			tmpStr := strings.TrimSpace(record[sf.SummaNo-1])
-			tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
-			res.Value, err = strconv.ParseFloat(tmpStr, 64)
-			if err != nil {
-				return res, err
-			}
-			logger.Sugar().Debug("value ", res.Value)
-		} else {
-			return res, err
-		}
-		// проверяем лицевой счёт
-		if sf.LicNo < countField {
-			tmpStr := record[sf.LicNo-1]
-			if sf.LicName == "" {
-				res.Occ, err = strconv.Atoi(tmpStr)
-				if err != nil {
-					return res, err
-				}
-			} else {
-				fields := strings.Split(tmpStr, ":")
-				//fmt.Println("len fields: ", len(fields))
-				if len(fields) < 2 {
-					return res, err
-				}
-				res.Occ, err = strconv.Atoi(strings.TrimSpace(fields[1]))
-				if err != nil {
-					return res, err
-				}
-			}
-			logger.Sugar().Debug("occ ", res.Occ)
-		} else {
-			return res, err
-		}
-		if sf.CommissNo > 0 {
-			if sf.CommissNo < countField {
-				tmpStr := strings.TrimSpace(record[sf.CommissNo-1])
-				tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
-				res.Commission, err = strconv.ParseFloat(tmpStr, 64)
-				if err != nil {
-					return res, err
-				}
-				logger.Sugar().Debug("Commission: ", res.Commission)
-			} else {
-				return res, errFormat
-			}
-		}
-		// проверяем адрес
-		if sf.AddresNo < countField {
-			tmpStr := record[sf.AddresNo-1]
-			if sf.LicName == "" {
-				res.Address = tmpStr
-			} else {
-				fields := strings.Split(tmpStr, ":")
-				if len(fields) < 2 {
-					return res, err
-				}
-				res.Address = strings.TrimSpace(fields[1])
-			}
-		} else {
-			return res, errFormat
-		}
-		if sf.FioNo > 0 {
-			if sf.FioNo < countField {
-				tmpStr := record[sf.FioNo-1]
-				res.Fio = strings.TrimSpace(tmpStr)
-			}
-		}
-		//logger.Sugar().Info("getPaymentsVal", zap.Any("Fields", res))
+		return res, errors.ErrFewFields
 	}
+
+	//logger.Sugar().Debug("countField: ", countField)
+	// проверяем дату
+	if sf.DataPlatNo < countField {
+		tmpStr := record[sf.DataPlatNo-1]
+		layoutDate := fmt.Sprintf("02%s01%s2006", sf.Dateseparator, sf.Dateseparator)
+		res.Date, err = time.Parse(layoutDate, tmpStr)
+		if err != nil {
+			return res, err
+		}
+		logger.Sugar().Debug("date ", res.Date)
+	} else {
+		return res, err
+	}
+	// проверяем сумму
+	if sf.SummaNo < countField {
+		tmpStr := strings.TrimSpace(record[sf.SummaNo-1])
+		tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
+		res.Value, err = strconv.ParseFloat(tmpStr, 64)
+		if err != nil {
+			return res, err
+		}
+		logger.Sugar().Debug("value ", res.Value)
+	} else {
+		return res, err
+	}
+	// проверяем лицевой счёт
+	if sf.LicNo < countField {
+		tmpStr := record[sf.LicNo-1]
+		if sf.LicName == "" {
+			res.Occ, err = strconv.Atoi(tmpStr)
+			if err != nil {
+				return res, err
+			}
+		} else {
+			fields := strings.Split(tmpStr, ":")
+			//fmt.Println("len fields: ", len(fields))
+			if len(fields) < 2 {
+				return res, err
+			}
+			res.Occ, err = strconv.Atoi(strings.TrimSpace(fields[1]))
+			if err != nil {
+				return res, err
+			}
+		}
+		logger.Sugar().Debug("occ ", res.Occ)
+	} else {
+		return res, err
+	}
+	if sf.CommissNo > 0 {
+		if sf.CommissNo < countField {
+			tmpStr := strings.TrimSpace(record[sf.CommissNo-1])
+			tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
+			res.Commission, err = strconv.ParseFloat(tmpStr, 64)
+			if err != nil {
+				return res, err
+			}
+			logger.Sugar().Debug("Commission: ", res.Commission)
+		} else {
+			return res, errors.ErrFormat
+		}
+	}
+	// проверяем адрес
+	if sf.AddresNo < countField {
+		tmpStr := record[sf.AddresNo-1]
+		if sf.LicName == "" {
+			res.Address = tmpStr
+		} else {
+			fields := strings.Split(tmpStr, ":")
+			if len(fields) < 2 {
+				return res, err
+			}
+			res.Address = strings.TrimSpace(fields[1])
+		}
+	} else {
+		return res, errors.ErrFormat
+	}
+	if sf.FioNo > 0 {
+		if sf.FioNo < countField {
+			tmpStr := record[sf.FioNo-1]
+			res.Fio = strings.TrimSpace(tmpStr)
+		}
+	}
+	//logger.Sugar().Info("getPaymentsVal", zap.Any("Fields", res))
+
 	return res, err
 }
