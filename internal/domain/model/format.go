@@ -19,9 +19,9 @@ type FormatBank struct {
 	Decimalseparator string `json:"decimalseparator"`
 	SummaNo          int    `json:"summa_no"`
 	SummaSize        int    `json:"summa_size"`
-	AddresNo         int    `json:"adres_no"`
-	AddresSize       int    `json:"adres_size"`
-	AdresName        string `json:"adres_name,omitempty"`
+	AddressNo        int    `json:"address_no"`
+	AddressSize      int    `json:"address_size"`
+	AddressName      string `json:"address_name,omitempty"`
 	FioNo            int    `json:"fio_no,omitempty"`
 	CommissNo        int    `json:"commis_no,omitempty"`
 	RaschName        string `json:"rasch_name,omitempty"`
@@ -51,8 +51,8 @@ type FormatBanks struct {
         "decimalseparator": ".",
         "summa_no": 5,
         "summa_size": 9,
-        "adres_no": 3,
-        "adres_size": 50,
+        "address_no": 3,
+        "address_size": 50,
         "fio_no": 2
     },
 */

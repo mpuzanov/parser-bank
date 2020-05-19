@@ -21,8 +21,8 @@ var (
 )
 
 func init() {
+	//проверяем существует ли каталог для загрузки файлов
 	if _, err := os.Stat(pathUpload); os.IsNotExist(err) {
-		//надо попробовать создать каталог
 		err := os.Mkdir(pathUpload, 0777)
 		if err != nil {
 			logger.LogSugar.Error("dir not exist", zap.String("dir", pathUpload), zap.Error(err))
@@ -37,6 +37,7 @@ func (s *myHandler) configRouter() {
 	s.router.PathPrefix("/parser-bank").Handler(http.FileServer(http.Dir("./templates/")))
 }
 
+// loadStore загружаем возможные форматы банковских реестров
 func (s *myHandler) loadStore() {
 	if err := s.store.Open(); err != nil {
 		s.logger.Error(err.Error())
@@ -62,7 +63,10 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		t.Execute(w, nil)
+		err = t.Execute(w, nil)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
 
 	case "POST":
 		s.logger.Debug("POST")
@@ -140,15 +144,19 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 			UploadFiles template.HTML
 			ContentJSON string
 		}{UploadFiles: template.HTML(strFiles), ContentJSON: string(jsData)}
-		t.Execute(w, data)
+		err = t.Execute(w, data)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
 	}
 }
 
+// logRequest логируем доступ к сайту
 func (s *myHandler) logRequest(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		//logger:=s.logger.With(zap.String("remote_addr", r.RemoteAddr))
 		s.logger.Info("Request",
 			zap.String("Method", r.Method),
 			zap.String("URI", r.RequestURI),

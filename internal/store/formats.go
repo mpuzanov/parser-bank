@@ -20,8 +20,8 @@ var formatData = `
         "decimalseparator": ".",
         "summa_no": 5,
         "summa_size": 9,
-        "adres_no": 3,
-        "adres_size": 50,
+        "address_no": 3,
+        "address_size": 50,
         "fio_no": 2
     },
     {
@@ -41,8 +41,8 @@ var formatData = `
         "decimalseparator": ".",
         "summa_no": 5,
         "summa_size": 9,
-        "adres_no": 3,
-        "adres_size": 50,
+        "address_no": 3,
+        "address_size": 50,
         "commis_no": 6
     },
     {
@@ -62,10 +62,10 @@ var formatData = `
         "decimalseparator": ",",
         "summa_no": 8,
         "summa_size": 9,
-        "adres_no": 7,
-        "adres_size": 50,
+        "address_no": 7,
+        "address_size": 50,
         "lic_name": "",
-        "adres_name": "",
+        "address_name": "",
         "commis_no": 10
     },
     {
@@ -85,10 +85,10 @@ var formatData = `
         "decimalseparator": ",",
         "summa_no": 10,
         "summa_size": 9,
-        "adres_no": 8,
-        "adres_size": 50,
+        "address_no": 8,
+        "address_size": 50,
         "lic_name": "",
-        "adres_name": "",
+        "address_name": "",
         "commis_no": 12
     },
 	{
@@ -108,8 +108,8 @@ var formatData = `
         "decimalseparator": ",",
         "summa_no": 9,
         "summa_size": 9,
-        "adres_no": 8,
-        "adres_size": 50,
+        "address_no": 8,
+        "address_size": 50,
         "lic_name": "",
         "commis_no": 11,
         "fio_no": 7
@@ -132,9 +132,9 @@ var formatData = `
         "decimalseparator": ".",
         "summa_no": 3,
         "summa_size": 9,
-        "adres_no": 5,
-        "adres_size": 50,
-        "adres_name": "АДРЕС",
+        "address_no": 5,
+        "address_size": 50,
+        "address_name": "АДРЕС",
         "commis_no": null,
         "rasch_name": null,
         "rasch_no": null,
@@ -158,9 +158,9 @@ var formatData = `
         "decimalseparator": ",",
         "summa_no": 5,
         "summa_size": 9,
-        "adres_no": 8,
-        "adres_size": 50,        
-        "adres_name": "АДРЕС",
+        "address_no": 8,
+        "address_size": 50,        
+        "address_name": "АДРЕС",
         "commis_no": 6,
         "rasch_name": null,
         "rasch_no": null

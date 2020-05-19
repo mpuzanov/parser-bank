@@ -16,8 +16,6 @@ import (
 	"go.uber.org/zap"
 )
 
-var layoutDate = "2006-01-02"
-
 // ReadFile .
 func ReadFile(filePath string, fbs *model.FormatBanks, logger *zap.Logger) ([]model.Payments, error) {
 
@@ -29,6 +27,9 @@ func ReadFile(filePath string, fbs *model.FormatBanks, logger *zap.Logger) ([]mo
 	logger.Info("", zap.String("file", filePath), zap.String("codePage", codePage.String()))
 
 	b, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, fmt.Errorf("ошибка чтения файла реестра %s. %w", filePath, err)
+	}
 	//определяем формат файла реестра
 	sf, err := detectFormatBank(b, fbs, logger)
 	if err != nil {
@@ -215,8 +216,8 @@ func getPaymentsVal(line string, sf *model.FormatBank, logger *zap.Logger) (mode
 		}
 	}
 	// проверяем адрес
-	if sf.AddresNo < countField {
-		tmpStr := record[sf.AddresNo-1]
+	if sf.AddressNo < countField {
+		tmpStr := record[sf.AddressNo-1]
 		if sf.LicName == "" {
 			res.Address = tmpStr
 		} else {

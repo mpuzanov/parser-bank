@@ -10,18 +10,18 @@ ENV APP_NAME parser-bank
 LABEL name=${APP_NAME} maintainer="Mikhail Puzanov <mpuzanov@mail.ru>" version="1"
 WORKDIR /opt/${APP_NAME}
 
-RUN apk add --no-cache tzdata \
-    && apk add -U --no-cache ca-certificates \
-    && adduser -D -g appuser appuser \
-    && chmod -R 755 ./
-
-COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
 COPY --from=builder /opt/${APP_NAME}/bin/${APP_NAME} ./bin/
 COPY --from=builder /opt/${APP_NAME}/configs/prod.yaml ./configs/
-COPY --from=builder /opt/${APP_NAME}/configs/format.json ./configs/
 COPY --from=builder /opt/${APP_NAME}/templates/ ./templates/
-EXPOSE 7777
 
+RUN apk add --no-cache tzdata \
+    && apk add -U --no-cache ca-certificates \
+    && mkdir -p /opt/${APP_NAME}/upload_files \
+    && adduser -D -g appuser appuser \
+    && chmod -R 755 ./ 
+    
+EXPOSE 7777
+USER appuser
 ENTRYPOINT ["./bin/parser-bank"]
 CMD ["-c", "./configs/prod.yaml"]
 

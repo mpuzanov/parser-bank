@@ -1,6 +1,9 @@
 .idea
 .vscode
 vendor
+test_data
+upload_files
+bin
 
 # Binaries for programs and plugins
 *.exe
@@ -20,5 +23,5 @@ vendor
 *.code-workspace
 go.sum
 
-/bin
+
 ./parser-bank
