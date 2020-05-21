@@ -10,7 +10,6 @@ import (
 	"os"
 
 	"github.com/mpuzanov/parser-bank/internal/domain/model"
-	"github.com/mpuzanov/parser-bank/internal/parser"
 	"github.com/mpuzanov/parser-bank/pkg/logger"
 	"go.uber.org/zap"
 )
@@ -78,7 +77,7 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		}
 		strFiles := ""
 		count := 0
-		valuesTotal := []model.Payments{}
+		valuesTotal := []model.Payment{}
 		for {
 			part, err := reader.NextPart()
 			if err == io.EOF {
@@ -110,15 +109,15 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 				return
 			}
 
-			values, err := parser.ReadFile(blobPath, &s.store.FormatBanks, s.logger)
+			values, err := s.store.ReadFile(blobPath, s.logger)
 			if err != nil {
 				s.logger.Error("Error:", zap.Error(err))
-				http.Error(w, err.Error(), 500)
-				return
+				//http.Error(w, err.Error(), 500)   //не будем прерывать цикл
+				//return
 			}
 			count++
 			s.logger.Info("", zap.Int("Count values", len(values)))
-			strFiles += fmt.Sprintf("%d. %s - кол-во платежей: %d<br>", count, part.FileName(), len(values))
+			strFiles += fmt.Sprintf("%d. %s - кол-во платежей: %d %s<br>", count, part.FileName(), len(values), err.Error())
 
 			valuesTotal = append(valuesTotal, values...)
 		}

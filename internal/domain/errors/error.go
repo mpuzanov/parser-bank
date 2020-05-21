@@ -8,8 +8,8 @@ func (ee ParserError) Error() string {
 }
 
 var (
-	// ErrFormat .
+	// ErrFormat формат не подходит
 	ErrFormat = ParserError("формат не подходит")
-	// ErrFewFields .
+	// ErrFewFields мало полей
 	ErrFewFields = ParserError("мало полей")
 )

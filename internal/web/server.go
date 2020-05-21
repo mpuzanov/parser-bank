@@ -10,14 +10,16 @@ import (
 
 	"github.com/gorilla/mux"
 	"github.com/mpuzanov/parser-bank/internal/config"
-	"github.com/mpuzanov/parser-bank/internal/store"
+	"github.com/mpuzanov/parser-bank/internal/repository"
+	"github.com/mpuzanov/parser-bank/internal/storage"
+
 	"go.uber.org/zap"
 )
 
 type myHandler struct {
 	router *mux.Router
 	logger *zap.Logger
-	store  *store.Store
+	store  repository.StorageFormatBanks
 }
 
 // Start .
@@ -26,7 +28,7 @@ func Start(conf *config.Config, log *zap.Logger) error {
 	handler := &myHandler{
 		router: mux.NewRouter(),
 		logger: log,
-		store:  store.New(),
+		store:  storage.NewFormatBanks(),
 	}
 	handler.configRouter()
 

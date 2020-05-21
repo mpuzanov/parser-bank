@@ -1,4 +1,18 @@
-package store
+package storage
+
+// ListFormats список определяемых форматов
+var ListFormats = map[string]string{
+	"D7L1A3S5":       "Почта_D7L1A3S5",          //1
+	"D8L1A3S5С6":     "Почта_D8L1A3S5С6",        //2
+	"D1L6A7S8C10":    "Сбербанк_D1L6A7S8C10",    //3
+	"D1L6A8S10C12F7": "Сбербанк_D1L6A8S10C12F7", //4
+	"D1L6A8S9C11F7":  "Сбербанк_D1L6A8S9C11F7",  //5
+	"D2L4A5S3":       "Ижкомбанк_D2L4S3A5",      //6
+	"D3L7A8S5C6":     "Сбербанк_D3L7A8S5C6",     //7
+	"D1L5A6S7C9":     "Сбербанк_D1L5A6S7C9",     //8   - TODO
+	//"":"",
+	//"":"",
+}
 
 // formatData список форматов для анализа платежей
 var formatData = `
@@ -69,7 +83,7 @@ var formatData = `
         "commis_no": 10
     },
     {
-        "name": "Сбербанк_D1L6A8S10C12",
+        "name": "Сбербанк_D1L6A8S10C12F7",
         "visible": true,
         "ext": "TXT",
         "code_page": "ASCII",
@@ -92,7 +106,7 @@ var formatData = `
         "commis_no": 12
     },
 	{
-        "name": "Сбербанк_D1L6F7A8S9C11",
+        "name": "Сбербанк_D1L6A8S9C11F7",
         "visible": true,
         "ext": "TXT",
         "code_page": "ASCII",
@@ -141,7 +155,7 @@ var formatData = `
 		"fio_no": 6
     },
     {
-        "name": "Сбербанк_D3L7S5C6A8",
+        "name": "Сбербанк_D3L7A8S5C6",
         "visible": true,
         "ext": "TXT",
         "code_page": "ASCII",

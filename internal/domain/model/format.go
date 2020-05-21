@@ -30,7 +30,7 @@ type FormatBank struct {
 
 // FormatBanks .
 type FormatBanks struct {
-	FormatBanks []FormatBank `json:"dataset"`
+	Db []FormatBank `json:"dataset"`
 }
 
 /*

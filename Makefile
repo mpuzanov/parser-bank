@@ -23,10 +23,11 @@ lint:
 	@goimports -w ${GO_SRC_DIRS}	
 	@gofmt -s -w ${GO_SRC_DIRS}
 	@golint ${GO_SRC_DIRS}
-	@golangci-lint run
+	@#golangci-lint run
 
 test:
 	go test -v ${GO_TEST_DIRS}
+	#go test -race -count 100 ${GO_TEST_DIRS}
 
 mod:
 	go mod verify

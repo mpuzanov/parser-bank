@@ -1,21 +1,20 @@
-package parser
+package storage
 
 import (
 	"log"
 	"os"
 	"testing"
 
-	"github.com/mpuzanov/parser-bank/internal/domain/model"
-	"github.com/mpuzanov/parser-bank/internal/store"
 	"go.uber.org/zap"
 )
 
 var (
-	fbStore model.FormatBanks
+	fbStore ListFormatBanks
 )
 
 func TestMain(m *testing.M) {
-	fb, err := store.LoadFormatBank()
+	fb := NewFormatBanks()
+	err := fb.Open()
 	if err != nil {
 		log.Fatalf("Ошибка загрузки вариантов форматов. %v", err)
 	}
@@ -36,6 +35,15 @@ func TestDetectFormatBank(t *testing.T) {
 		err  error
 	}{
 		{
+			desc: "Тест Почта_D7L1A3S5",
+			text: `
+			6149829;;Пушкинская, 240А, 50;;491;6.38;30.08.2018;
+			6258413;;Орджоникидзе, 26А, 18;;50.11;0.65;30.08.2018;
+			`,
+			want: "Почта_D7L1A3S5",
+			err:  nil,
+		},
+		{
 			desc: "Тест Почта_D8L1A3S5С6",
 			text: `
 			19;7536.12;30.08.2018;03.09.2018;
@@ -49,7 +57,7 @@ func TestDetectFormatBank(t *testing.T) {
 			err:  nil,
 		},
 		{
-			desc: "Тест Сбербанк_D3L7S5C6A8",
+			desc: "Тест Сбербанк_D3L7A8S5C6",
 			text: `
 			~Плательщик: Западно-Уральский банк Сбербанка России
 			~Счет плательщика: 30233810749000600001
@@ -62,11 +70,11 @@ func TestDetectFormatBank(t *testing.T) {
 			8618;8618999V;27/03/2017;9539370;1052.84;10.53;ЛИЦЕВОЙ СЧЕТ: 700042375; АДРЕС: МОЛОДЕЖНАЯ 77 КВ 64;
 			8618;8618999V;27/03/2017;591419;1093.76;10.94;ЛИЦЕВОЙ СЧЕТ: 700014313; АДРЕС: К.МАРКСА 425 КВ 32/3;			
 			`,
-			want: "Сбербанк_D3L7S5C6A8",
+			want: "Сбербанк_D3L7A8S5C6",
 			err:  nil,
 		},
 		{
-			desc: "Тест Сбербанк_D1L6A8S10C12",
+			desc: "Тест Сбербанк_D1L6A8S10C12F7",
 			text: `
 			25-09-2019;07-37-41;8618;8618999V;300863541515;910000667;КУМАЧЕВА ВЕРА АЛЕКСАНДРОВНА;ИЖЕВСК, Т.БАРАМЗИНОЙ, Д. 7А, КВ. 90;0819;3989,76;3945,87;43,89;5
 			25-09-2019;07-46-35;8618;8618999V;350863558941;910000413;СУХИХ НАТАЛЬЯ АНАТОЛЬЕВНА;ИЖЕВСК, Т.БАРАМЗИНОЙ, Д. 7А, КВ. 118;0819;3566,25;3527,02;39,23;5
@@ -75,7 +83,7 @@ func TestDetectFormatBank(t *testing.T) {
 			25-09-2019;09-15-08;8618;8618999V;600619867091;910001707;БУРАШНИКОВА ЛИЛИЯ ФАРИТОВНА;ИЖЕВСК, Т.БАРАМЗИНОЙ, Д. 80, КВ. 37;0819;2245,27;2220,57;24,70;5
 			25-09-2019;09-56-14;8618;8618999V;700503481402;910001132;ХОЛКИНА АЛЕВТИНА ВИКТОРОВНА;ИЖЕВСК, Т.БАРАМЗИНОЙ, Д. 3А, КВ. 2;0819;985,71;974,87;10,84;5
 			`,
-			want: "Сбербанк_D1L6A8S10C12",
+			want: "Сбербанк_D1L6A8S10C12F7",
 			err:  nil,
 		},
 		{
@@ -99,13 +107,13 @@ func TestDetectFormatBank(t *testing.T) {
 			err:  nil,
 		},
 		{
-			desc: "Тест Сбербанк_D1L6F7A8S9C11",
+			desc: "Тест Сбербанк_D1L6A8S9C11F7",
 			text: `
 			01-10-2019;17-35-18;8618;8618999V;550319691514;20040341;КОРОБОВА СВЕТЛАНА ВЛАДИМИРОВНА;ИЖЕВСК, ВОСТОЧНАЯ, Д. 4, КВ. 34;10943,21;10735,29;207,92;
 			01-10-2019;19-50-48;8618;8618999V;400805839118;20080161;НАГИМОВ МАРСЕЛЬ ДАМИРОВИЧ;ИЖЕВСК, ВОСТОЧНАЯ, Д. 8, КВ. 16;8254,77;8097,93;156,84;
 			=2;19197,98;18833,22;364,76;835393;02-10-2019;
 			`,
-			want: "Сбербанк_D1L6F7A8S9C11",
+			want: "Сбербанк_D1L6A8S9C11F7",
 			err:  nil,
 		},
 	}
@@ -113,7 +121,7 @@ func TestDetectFormatBank(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			//reader := strings.NewReader(tC.text)
-			got, err := detectFormatBank([]byte(tC.text), &fbStore, loggerTest)
+			got, err := fbStore.detectFormatBank([]byte(tC.text), loggerTest)
 			if err != nil {
 				t.Errorf("%s error: %v", tC.desc, err)
 			}
