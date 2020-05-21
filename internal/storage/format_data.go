@@ -9,7 +9,6 @@ var ListFormats = map[string]string{
 	"D1L6A8S9C11F7":  "Сбербанк_D1L6A8S9C11F7",  //5
 	"D2L4A5S3":       "Ижкомбанк_D2L4S3A5",      //6
 	"D3L7A8S5C6":     "Сбербанк_D3L7A8S5C6",     //7
-	"D1L5A6S7C9":     "Сбербанк_D1L5A6S7C9",     //8   - TODO
 	//"":"",
 	//"":"",
 }
@@ -113,7 +112,7 @@ var formatData = `
         "ext_bank": "",
         "char_zag": "=",
         "char_razd": ";",
-        "filename_filter": "1835084267*.*",
+        "filename_filter": "*.*",
         "lic_no": 6,
         "lic_size": 9,
         "data_plat_no": 1,

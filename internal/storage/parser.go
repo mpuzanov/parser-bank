@@ -89,20 +89,16 @@ func (s *ListFormatBanks) ReadFile(filePath string, logger *zap.Logger) ([]model
 func (s *ListFormatBanks) detectFormatBank(r []byte, logger *zap.Logger) (*model.FormatBank, error) {
 
 	if len(s.Db) == 0 {
-		return nil, fmt.Errorf("Таблица форматов пуста")
+		return nil, errors.ErrListFormatEmpty
 	}
-	//fmt.Println(r)
 	for _, fm := range s.Db {
 
-		logger.Debug("Проверяем: ", zap.String("формат", fm.Name))
 		got, err := s.checkBankReestr(r, &fm, logger)
 		if err == nil && got {
-			zap.S().Debug("формат подошёл")
+			zap.S().Debug("подошёл", zap.String("формат", fm.Name))
 			return &fm, nil
-			break
-		} else {
-			logger.Debug("не подходит", zap.Error(err))
 		}
+		logger.Debug("не подходит", zap.String("формат", fm.Name), zap.Error(err))
 	}
 	return nil, nil
 }
@@ -145,7 +141,10 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logg
 	var err error
 
 	record := strings.Split(line, sf.CharRazd)
-	logger.Sugar().Debug("record: ", record)
+	if sf.Name == "Сбербанк_D1L6A7S8C10" {
+		logger.Sugar().Debug("record: ", record)
+	}
+
 	countField := len(record)
 	// for i := 0; i < countField; i++ {
 	// 	logger.Sugar().Debugf("Field %d: %s", i, record[i])
@@ -156,67 +155,66 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logg
 
 	//logger.Sugar().Debug("countField: ", countField)
 	// проверяем дату
-	if sf.DataPlatNo < countField {
-		tmpStr := record[sf.DataPlatNo-1]
-		layoutDate := fmt.Sprintf("02%s01%s2006", sf.Dateseparator, sf.Dateseparator)
-		res.Date, err = time.Parse(layoutDate, tmpStr)
-		if err != nil {
-			return res, err
-		}
-		logger.Sugar().Debug("date ", res.Date)
-	} else {
+	if sf.DataPlatNo > countField {
 		return res, errors.ErrFewFields
 	}
+	tmpStr := record[sf.DataPlatNo-1]
+	layoutDate := fmt.Sprintf("02%s01%s2006", sf.Dateseparator, sf.Dateseparator)
+	res.Date, err = time.Parse(layoutDate, tmpStr)
+	if err != nil {
+		return res, err
+	}
+	logger.Sugar().Debug("date: ", res.Date)
+
 	// проверяем сумму
-	if sf.SummaNo < countField {
-		tmpStr := strings.TrimSpace(record[sf.SummaNo-1])
-		tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
-		res.Value, err = strconv.ParseFloat(tmpStr, 64)
+	if sf.SummaNo > countField {
+		return res, errors.ErrFewFields
+	}
+	tmpStr = strings.TrimSpace(record[sf.SummaNo-1])
+	tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
+	res.Value, err = strconv.ParseFloat(tmpStr, 64)
+	if err != nil {
+		return res, err
+	}
+	logger.Sugar().Debug("Summa: ", res.Value)
+
+	// проверяем лицевой счёт
+	if sf.LicNo > countField {
+		return res, errors.ErrFewFields
+	}
+
+	tmpStr = record[sf.LicNo-1]
+	if sf.LicName == "" {
+		res.Occ, err = strconv.Atoi(tmpStr)
 		if err != nil {
 			return res, err
 		}
-		logger.Sugar().Debug("value ", res.Value)
 	} else {
-		return res, errors.ErrFewFields
-	}
-	// проверяем лицевой счёт
-	if sf.LicNo < countField {
-		tmpStr := record[sf.LicNo-1]
-		if sf.LicName == "" {
-			res.Occ, err = strconv.Atoi(tmpStr)
-			if err != nil {
-				return res, err
-			}
-		} else {
-			fields := strings.Split(tmpStr, ":")
-			//fmt.Println("len fields: ", len(fields))
-			if len(fields) < 2 {
-				return res, errors.ErrFormat
-			}
-			res.Occ, err = strconv.Atoi(strings.TrimSpace(fields[1]))
-			if err != nil {
-				return res, err
-			}
-		}
-		logger.Sugar().Debug("occ ", res.Occ)
-	} else {
-		return res, errors.ErrFewFields
-	}
-	if sf.CommissNo > 0 {
-		if sf.CommissNo < countField {
-			tmpStr := strings.TrimSpace(record[sf.CommissNo-1])
-			tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
-			res.Commission, err = strconv.ParseFloat(tmpStr, 64)
-			if err != nil {
-				return res, err
-			}
-			logger.Sugar().Debug("Commission: ", res.Commission)
-		} else {
+		fields := strings.Split(tmpStr, ":")
+		if len(fields) < 2 {
 			return res, errors.ErrFormat
 		}
+		res.Occ, err = strconv.Atoi(strings.TrimSpace(fields[1]))
+		if err != nil {
+			return res, err
+		}
+	}
+	logger.Sugar().Debug("occ: ", res.Occ)
+
+	if sf.CommissNo > 0 {
+		if sf.CommissNo > countField {
+			return res, errors.ErrFormat
+		}
+		tmpStr := strings.TrimSpace(record[sf.CommissNo-1])
+		tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
+		res.Commission, err = strconv.ParseFloat(tmpStr, 64)
+		if err != nil {
+			return res, err
+		}
+		logger.Sugar().Debug("Commission: ", res.Commission)
 	}
 	// проверяем адрес
-	if sf.AddressNo < countField {
+	if sf.AddressNo <= countField {
 		tmpStr := record[sf.AddressNo-1]
 		if sf.LicName == "" {
 			res.Address = tmpStr
@@ -231,7 +229,7 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logg
 		return res, errors.ErrFormat
 	}
 	if sf.FioNo > 0 {
-		if sf.FioNo < countField {
+		if sf.FioNo <= countField {
 			tmpStr := record[sf.FioNo-1]
 			res.Fio = strings.TrimSpace(tmpStr)
 		} else {

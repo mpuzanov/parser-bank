@@ -19,13 +19,12 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Ошибка загрузки вариантов форматов. %v", err)
 	}
 	fbStore = *fb
-	// 	fmt.Println(fbStore)
 	os.Exit(m.Run())
 }
 
 func TestDetectFormatBank(t *testing.T) {
 	loggerTest, _ := zap.NewProduction() //InfoLevel json stderr
-	//loggerTest, _ := zap.NewDevelopment() console DebugLevel stderr
+	//loggerTest, _ := zap.NewDevelopment() //console DebugLevel stderr
 	//loggerTest := zap.NewExample() // json Stdout DebugLevel
 
 	testCases := []struct {
@@ -54,6 +53,16 @@ func TestDetectFormatBank(t *testing.T) {
 			6088539;;Фруктовая, 27, 39;;543.5;7.07;16009;30.08.2018;426054;42605401;
 			`,
 			want: "Почта_D8L1A3S5С6",
+			err:  nil,
+		},
+		{
+			desc: "Тест Сбербанк_D1L6A7S8C10",
+			text: `
+			20-04-2020;01-28-59;8618;8618999V;401087864321;700154937;ИЖЕВСК, ПАСТУХОВА, Д. 57, КВ. 75;683,46;676,63;6,83
+			20-04-2020;03-14-38;8618;8618999V;451086752391;700041646;ИЖЕВСК, ЛИХВИНЦЕВА, Д. 66, КВ. 34;1200,00;1188,00;12,00
+			20-04-2020;04-29-39;8618;8618999V;351058061713;700227299;ИЖЕВСК, Г.СТРОИТЕЛЕЙ, Д. 71А, КВ. 17;1578,16;1562,38;15,78
+			`,
+			want: "Сбербанк_D1L6A7S8C10",
 			err:  nil,
 		},
 		{

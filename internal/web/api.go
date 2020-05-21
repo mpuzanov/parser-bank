@@ -108,16 +108,17 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
-
+			sError := ""
 			values, err := s.store.ReadFile(blobPath, s.logger)
 			if err != nil {
 				s.logger.Error("Error:", zap.Error(err))
+				sError = err.Error()
 				//http.Error(w, err.Error(), 500)   //не будем прерывать цикл
 				//return
 			}
 			count++
 			s.logger.Info("", zap.Int("Count values", len(values)))
-			strFiles += fmt.Sprintf("%d. %s - кол-во платежей: %d %s<br>", count, part.FileName(), len(values), err.Error())
+			strFiles += fmt.Sprintf("%d. %s - кол-во платежей: %d %s<br>", count, part.FileName(), len(values), sError)
 
 			valuesTotal = append(valuesTotal, values...)
 		}
