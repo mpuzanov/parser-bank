@@ -16,12 +16,12 @@ COPY --from=builder /opt/${APP_NAME}/templates/ ./templates/
 
 RUN apk add --no-cache tzdata \
     && apk add -U --no-cache ca-certificates \
-    && mkdir -p /opt/${APP_NAME}/upload_files \
+    && mkdir -p /opt/${APP_NAME}/tmp_files \
     && adduser -D -g appuser appuser \
     && chmod -R 755 ./ 
     
 EXPOSE 7777
 USER appuser
 ENTRYPOINT ["./bin/parser-bank"]
-CMD ["-c", "./configs/prod.yaml"]
+CMD ["web_server", "-c", "./configs/prod.yaml"]
 
