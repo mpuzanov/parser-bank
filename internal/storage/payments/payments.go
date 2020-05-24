@@ -1,6 +1,7 @@
 package payments
 
 import (
+	"strconv"
 	"unicode/utf8"
 
 	"github.com/mpuzanov/parser-bank/internal/domain/model"
@@ -43,7 +44,7 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 
 	//Зададим наименование колонок
 	row = sheet.AddRow()
-	for index := 0; index < len(s.Db); index++ {
+	for index := 0; index < len(HeaderDoc); index++ {
 		cell = row.AddCell()
 		cell.Value = HeaderDoc[index]
 		cell.SetStyle(headerStyle)
@@ -53,22 +54,62 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 	//данные
 	for index := 0; index < len(s.Db); index++ {
 		row = sheet.AddRow()
-		for j := 0; j < len(HeaderDoc); j++ {
-			cell = row.AddCell()
-			cell.Value = s.Db[index].Address //[HeaderDoc[j]]
-			cell.SetStyle(dataStyle)
-
-			if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
-				withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
-				//fmt.Println(cell.Value)
-			}
+		// добавляем поля в строке
+		// последовательность полей:  "Occ", "Address", "Date", "Value", "Commission", "Fio", "PaymentAccount"
+		j := 0 //Occ
+		cell = row.AddCell()
+		cell.Value = strconv.Itoa(s.Db[index].Occ)
+		cell.SetStyle(dataStyle)
+		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
+			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
+		}
+		j = 1 //Address
+		cell = row.AddCell()
+		cell.Value = s.Db[index].Address
+		cell.SetStyle(dataStyle)
+		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
+			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
+		}
+		j = 2 //Date
+		cell = row.AddCell()
+		cell.Value = s.Db[index].Date.Format("2006-01-02")
+		cell.SetStyle(dataStyle)
+		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
+			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
+		}
+		j = 3 //Value
+		cell = row.AddCell()
+		cell.Value = strconv.FormatFloat(s.Db[index].Value, 'f', -1, 64)
+		cell.SetStyle(dataStyle)
+		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
+			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
+		}
+		j = 4 //Commission
+		cell = row.AddCell()
+		cell.Value = strconv.FormatFloat(s.Db[index].Commission, 'f', -1, 64)
+		cell.SetStyle(dataStyle)
+		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
+			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
+		}
+		j = 5 //Fio
+		cell = row.AddCell()
+		cell.Value = s.Db[index].Fio
+		cell.SetStyle(dataStyle)
+		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
+			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
+		}
+		j = 6 //PaymentAccount
+		cell = row.AddCell()
+		cell.Value = s.Db[index].PaymentAccount
+		cell.SetStyle(dataStyle)
+		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
+			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
 		}
 	}
 	//Устанавливаем ширину колонок
 	//fmt.Println(withHeader)
 	for i, col := range sheet.Cols {
 		col.Width = float64(withHeader[HeaderDoc[i]])
-		//fmt.Println(i, HeaderDoc[i], col.Width)
 	}
 
 	err = file.Save(fileName)
