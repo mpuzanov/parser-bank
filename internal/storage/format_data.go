@@ -151,7 +151,8 @@ var formatData = `
         "commis_no": null,
         "rasch_name": null,
         "rasch_no": null,
-		"fio_no": 6
+        "fio_no": 6,
+        "fio_name": "ФИО"
     },
     {
         "name": "Сбербанк_D3L7A8S5C6",
