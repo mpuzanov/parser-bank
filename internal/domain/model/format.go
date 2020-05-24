@@ -23,6 +23,7 @@ type FormatBank struct {
 	AddressSize      int    `json:"address_size"`
 	AddressName      string `json:"address_name,omitempty"`
 	FioNo            int    `json:"fio_no,omitempty"`
+	FioName          string `json:"fio_name,omitempty"`
 	CommissNo        int    `json:"commis_no,omitempty"`
 	RaschName        string `json:"rasch_name,omitempty"`
 	RaschNo          int    `json:"rasch_no,omitempty"`
