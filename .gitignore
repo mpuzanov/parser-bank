@@ -2,7 +2,7 @@
 .vscode
 vendor
 test_data
-upload_files
+tmp_files
 bin
 
 # Binaries for programs and plugins

@@ -214,27 +214,33 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logg
 		logger.Sugar().Debug("Commission: ", res.Commission)
 	}
 	// проверяем адрес
-	if sf.AddressNo <= countField {
-		tmpStr := record[sf.AddressNo-1]
-		if sf.LicName == "" {
-			res.Address = tmpStr
-		} else {
+	if sf.AddressNo > countField {
+		return res, errors.ErrFormat
+	}
+	tmpStr = record[sf.AddressNo-1]
+	if sf.LicName == "" {
+		res.Address = tmpStr
+	} else {
+		fields := strings.Split(tmpStr, ":")
+		if len(fields) < 2 {
+			return res, errors.ErrFormat
+		}
+		res.Address = strings.TrimSpace(fields[1])
+	}
+
+	if sf.FioNo > 0 {
+		if sf.FioNo > countField {
+			return res, errors.ErrFormat
+		}
+		tmpStr := record[sf.FioNo-1]
+		if sf.FioName != "" {
 			fields := strings.Split(tmpStr, ":")
 			if len(fields) < 2 {
 				return res, errors.ErrFormat
 			}
-			res.Address = strings.TrimSpace(fields[1])
+			tmpStr = fields[1]
 		}
-	} else {
-		return res, errors.ErrFormat
-	}
-	if sf.FioNo > 0 {
-		if sf.FioNo <= countField {
-			tmpStr := record[sf.FioNo-1]
-			res.Fio = strings.TrimSpace(tmpStr)
-		} else {
-			return res, errors.ErrFormat
-		}
+		res.Fio = strings.TrimSpace(tmpStr)
 	}
 	//logger.Sugar().Info("getPaymentsVal", zap.Any("Fields", res))
 

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path"
 	"syscall"
 	"time"
 
@@ -19,15 +20,23 @@ import (
 type myHandler struct {
 	router *mux.Router
 	logger *zap.Logger
+	cfg    *config.Config
 	store  repository.StorageFormatBanks
 }
 
 // Start .
 func Start(conf *config.Config, log *zap.Logger) error {
 
+	err := preparePath(conf.PathTmp)
+	if err != nil {
+		log.Error("Prepare path", zap.Error(err))
+		os.Exit(1)
+	}
+
 	handler := &myHandler{
 		router: mux.NewRouter(),
 		logger: log,
+		cfg:    conf,
 		store:  storage.NewFormatBanks(),
 	}
 	handler.configRouter()
@@ -60,6 +69,13 @@ func Start(conf *config.Config, log *zap.Logger) error {
 	defer func() {
 		cancel()
 	}()
+
+	//подчищаем каталог в временными файлами
+	err = deleteTmpFiles(conf.PathTmp)
+	if err != nil {
+		log.Error("deleteTmpFiles", zap.Error(err))
+	}
+
 	if err := srv.Shutdown(ctx); err != nil {
 		log.Fatal("Server shutdown failed", zap.Error(err))
 	}
@@ -68,4 +84,56 @@ func Start(conf *config.Config, log *zap.Logger) error {
 
 	return nil
 
+}
+
+//preparePath проверяем существуют ли необходимые каталоги для работы
+func preparePath(tmpDir string) error {
+	//проверяем существует ли каталог временных файлов
+	if _, err := os.Stat(tmpDir); os.IsNotExist(err) {
+		err := os.Mkdir(tmpDir, 0666)
+		if err != nil {
+			return err
+		}
+	}
+	//проверяем существует ли каталог для загрузки файлов
+	dir := path.Join(tmpDir, "in")
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.Mkdir(dir, 0666)
+		if err != nil {
+			return err
+		}
+	}
+	//проверяем существует ли каталог для выгрузки файлов
+	dir = path.Join(tmpDir, "out")
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.Mkdir(dir, 0666)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func deleteTmpFiles(tmpDir string) error {
+
+	dir := path.Join(tmpDir, "in")
+	err := os.RemoveAll(dir)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(dir, 0666)
+	if err != nil {
+		return err
+	}
+
+	dir = path.Join(tmpDir, "out")
+	err = os.RemoveAll(dir)
+	if err != nil {
+		return err
+	}
+	err = os.MkdirAll(dir, 0666)
+	if err != nil {
+		return err
+	}
+	return nil
 }

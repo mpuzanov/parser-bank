@@ -21,8 +21,9 @@ build:
 
 lint:
 	@goimports -w ${GO_SRC_DIRS}	
-	@gofmt -s -w ${GO_SRC_DIRS}
+	@gofmt -s -w -d ${GO_SRC_DIRS}
 	@golint ${GO_SRC_DIRS}
+	@go vet ${GO_SRC_DIRS}
 	@#golangci-lint run
 
 test:
@@ -35,7 +36,11 @@ mod:
 	go mod tidy
 
 run:
-	@go run ${SOURCE} --config=configs/prod.yaml
+	@go run ${SOURCE} web_server --config=configs/prod.yaml
+
+run-shell:
+	@go run ${SOURCE} shell --path=test_data
+	@go run ${SOURCE} shell --path=test_data/0_mupspdu_0925.txt
 
 .PHONY: dockerbuild
 dockerbuild: 
@@ -43,7 +48,7 @@ dockerbuild:
 
 .PHONY: up
 up: # 
-	docker-compose -f ./deployments/docker-compose.yaml up --build --remove-orphans
+	docker-compose -f ./deployments/docker-compose.yaml up --build
 
 .PHONY: down
 down: 

@@ -6,34 +6,31 @@ import (
 	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
+	"path/filepath"
 
-	"github.com/mpuzanov/parser-bank/internal/domain/model"
-	"github.com/mpuzanov/parser-bank/pkg/logger"
+	"github.com/gorilla/mux"
+	"github.com/mpuzanov/parser-bank/internal/storage/payments"
 	"go.uber.org/zap"
 )
 
 var (
-	fileTemplate = "./templates/index.html"
-	pathUpload   = "./upload_files/"
+	fileTemplate             = "./templates/index.html"
+	pathDownload, pathUpload string
 )
-
-func init() {
-	//проверяем существует ли каталог для загрузки файлов
-	if _, err := os.Stat(pathUpload); os.IsNotExist(err) {
-		err := os.Mkdir(pathUpload, 0777)
-		if err != nil {
-			logger.LogSugar.Error("dir not exist", zap.String("dir", pathUpload), zap.Error(err))
-			os.Exit(1)
-		}
-	}
-}
 
 func (s *myHandler) configRouter() {
 	s.router.Use(s.logRequest)
 	s.router.HandleFunc("/parser-bank", s.UploadData)
+	s.router.HandleFunc("/parser-bank/upload", s.UploadData)
+	s.router.HandleFunc("/parser-bank/download/{file}", s.DownloadFile)
 	s.router.PathPrefix("/parser-bank").Handler(http.FileServer(http.Dir("./templates/")))
+
+	pathDownload = path.Join(s.cfg.PathTmp, "out")
+	pathUpload = path.Join(s.cfg.PathTmp, "in")
 }
 
 // loadStore загружаем возможные форматы банковских реестров
@@ -47,6 +44,25 @@ func (s *myHandler) loadStore() {
 
 func (s *myHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	s.router.ServeHTTP(w, r)
+}
+
+// DownloadFile .
+func (s *myHandler) DownloadFile(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	fileName := vars["file"]
+	//fmt.Fprint(w, "file=", fileName)
+	http.ServeFile(w, r, path.Join(pathDownload, fileName))
+
+	// modtime := time.Now()
+	// content := randomContent(modtime.UnixNano(), 1024)
+
+	// // ServeContent uses the fileName for mime detection
+	// //const fileName = "random.txt"
+
+	// // tell the browser the returned content should be downloaded
+	// w.Header().Add("Content-Disposition", "Attachment")
+
+	// http.ServeContent(w, r, fileName, modtime, content)
 }
 
 // UploadData .
@@ -77,52 +93,60 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		}
 		strFiles := ""
 		count := 0
-		valuesTotal := []model.Payment{}
+		valuesTotal := payments.ListPayments{}
 		for {
 			part, err := reader.NextPart()
 			if err == io.EOF {
 				break
 			}
-
 			if part.FileName() == "" {
 				continue
 			}
 
-			blobPath := pathUpload + part.FileName()
-			dst, err := os.Create(blobPath)
+			tmpfile, err := ioutil.TempFile(pathUpload, part.FileName())
 			if err != nil {
-				http.Error(w, err.Error(), http.StatusInternalServerError)
-				return
+				s.logger.Error("TempFile", zap.Error(err))
 			}
+			tmpFileName := tmpfile.Name()
 			defer func() {
-				dst.Close()
-				err = os.Remove(blobPath)
+				tmpfile.Close()
+				err = os.Remove(tmpFileName)
 				if err != nil {
-					s.logger.Error("Remove", zap.Error(err))
-				} else {
-					s.logger.Debug("File has been deleted successfully.", zap.String("fileName", blobPath))
+					s.logger.Error("Remove tmpfile", zap.Error(err))
 				}
 			}()
-
-			if _, err := io.Copy(dst, part); err != nil {
+			if _, err := io.Copy(tmpfile, part); err != nil {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
 				return
 			}
+
 			sError := ""
-			values, err := s.store.ReadFile(blobPath, s.logger)
+			values, err := s.store.ReadFile(tmpFileName, s.logger)
 			if err != nil {
 				s.logger.Error("Error:", zap.Error(err))
 				sError = err.Error()
-				//http.Error(w, err.Error(), 500)   //не будем прерывать цикл
-				//return
 			}
 			count++
 			s.logger.Info("", zap.Int("Count values", len(values)))
 			strFiles += fmt.Sprintf("%d. %s - кол-во платежей: %d %s<br>", count, part.FileName(), len(values), sError)
 
-			valuesTotal = append(valuesTotal, values...)
+			valuesTotal.Db = append(valuesTotal.Db, values...)
 		}
-		strFiles += fmt.Sprintf("Итого платежей: %d<br>", len(valuesTotal))
+		strFiles += fmt.Sprintf("Итого платежей: %d<br>", len(valuesTotal.Db))
+
+		tmpfile, err := ioutil.TempFile(pathDownload, "file*.xlsx")
+		if err != nil {
+			s.logger.Error("TempFile", zap.Error(err))
+		}
+		nameFile := tmpfile.Name()
+		err = valuesTotal.SaveToExcel(nameFile)
+		if err != nil {
+			s.logger.Error("SaveToExcel", zap.Error(err))
+		} else {
+			nameFile := "parser-bank/download/" + filepath.Base(nameFile)
+			url := fmt.Sprintf("<a href=\"%s\" target=\"_blank\">Ссылка на файл</a>", nameFile)
+			strFiles += url
+		}
 
 		parsedJSON, err := json.Marshal(valuesTotal)
 		if err != nil {
@@ -132,7 +156,6 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			s.logger.Error("Error Prettyprint", zap.Error(err))
 		}
-		//fmt.Println(sting(jsData))
 
 		t, err := template.ParseFiles(fileTemplate)
 		if err != nil {
@@ -148,6 +171,9 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
+
+		// newURL := "/parser-bank/download"
+		// http.Redirect(w, req, newURL, http.StatusSeeOther)
 
 	default:
 		w.WriteHeader(http.StatusMethodNotAllowed)
