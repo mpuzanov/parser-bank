@@ -14,6 +14,7 @@ type Config struct {
 	HTTPAddr string         `yaml:"http_listen" mapstructure:"http_listn"`
 	Host     string         `yaml:"http_host" mapstructure:"http_host"`
 	Port     string         `yaml:"http_port" mapstructure:"http_port"`
+	PathTmp  string         `yaml:"path_tmp" mapstructure:"path_tmp"`
 }
 
 // LoadConfig Загрузка конфигурации из файла
@@ -24,6 +25,7 @@ func LoadConfig(filePath string) (*Config, error) {
 	viper.SetDefault("log.level", "info")
 	viper.SetDefault("http_host", "0.0.0.0")
 	viper.SetDefault("http_port", "7777")
+	viper.SetDefault("path_tmp", "./tmp_files/")
 
 	if filePath != "" {
 		logger.LogSugar.Debugf("Parsing config: %s", filePath)
