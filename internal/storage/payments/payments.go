@@ -1,7 +1,6 @@
 package payments
 
 import (
-	"strconv"
 	"unicode/utf8"
 
 	"github.com/mpuzanov/parser-bank/internal/domain/model"
@@ -11,13 +10,16 @@ import (
 // ListPayments структура для хранения платежей
 type ListPayments model.Payments
 
+var (
+	//HeaderDoc список полей в заголовке
+	HeaderDoc = []string{"Occ", "Address", "Date", "Value", "Commission", "Fio", "PaymentAccount"}
+
+	//withHeader ширина колонок
+	withHeader = make(map[string]int)
+)
+
 // SaveToExcel сохраняем данные в файл
 func (s *ListPayments) SaveToExcel(fileName string) error {
-
-	//HeaderDoc список полей в заголовке
-	var HeaderDoc = []string{"Occ", "Address", "Date", "Value", "Commission", "Fio", "PaymentAccount"}
-	//withHeader ширина колонок
-	var withHeader = make(map[string]int)
 
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
@@ -50,7 +52,7 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 		cell.SetStyle(headerStyle)
 		withHeader[HeaderDoc[index]] = utf8.RuneCountInString(HeaderDoc[index])
 	}
-	//fmt.Println(withHeader)
+
 	//данные
 	for index := 0; index < len(s.Db); index++ {
 		row = sheet.AddRow()
@@ -58,11 +60,10 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 		// последовательность полей:  "Occ", "Address", "Date", "Value", "Commission", "Fio", "PaymentAccount"
 		j := 0 //Occ
 		cell = row.AddCell()
-		cell.Value = strconv.Itoa(s.Db[index].Occ)
+		cell.SetInt(s.Db[index].Occ)
 		cell.SetStyle(dataStyle)
-		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
-			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
-		}
+		withHeader[HeaderDoc[j]] = 10
+
 		j = 1 //Address
 		cell = row.AddCell()
 		cell.Value = s.Db[index].Address
@@ -70,27 +71,28 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
 			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
 		}
+
 		j = 2 //Date
 		cell = row.AddCell()
-		cell.Value = s.Db[index].Date.Format("2006-01-02")
+		//cell.Value = s.Db[index].Date.Format("2006-01-02")
+		cell.SetDate(s.Db[index].Date)
 		cell.SetStyle(dataStyle)
-		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
-			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
-		}
+		withHeader[HeaderDoc[j]] = 10
+
 		j = 3 //Value
 		cell = row.AddCell()
-		cell.Value = strconv.FormatFloat(s.Db[index].Value, 'f', -1, 64)
+		cell.SetFloatWithFormat(s.Db[index].Value, "#,##0.00")
 		cell.SetStyle(dataStyle)
-		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
-			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
-		}
+		withHeader[HeaderDoc[j]] = 10
+
 		j = 4 //Commission
 		cell = row.AddCell()
-		cell.Value = strconv.FormatFloat(s.Db[index].Commission, 'f', -1, 64)
+		//cell.Value = strconv.FormatFloat(s.Db[index].Commission, 'f', -1, 64)
+		//cell.SetFloat(s.Db[index].Commission)
+		cell.SetFloatWithFormat(s.Db[index].Commission, "#,##0.00")
 		cell.SetStyle(dataStyle)
-		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
-			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
-		}
+		withHeader[HeaderDoc[j]] = 10
+
 		j = 5 //Fio
 		cell = row.AddCell()
 		cell.Value = s.Db[index].Fio
@@ -98,16 +100,14 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
 			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
 		}
+
 		j = 6 //PaymentAccount
 		cell = row.AddCell()
 		cell.Value = s.Db[index].PaymentAccount
 		cell.SetStyle(dataStyle)
-		if utf8.RuneCountInString(cell.Value) > withHeader[HeaderDoc[j]] {
-			withHeader[HeaderDoc[j]] = utf8.RuneCountInString(cell.Value)
-		}
+		withHeader[HeaderDoc[j]] = 20
 	}
 	//Устанавливаем ширину колонок
-	//fmt.Println(withHeader)
 	for i, col := range sheet.Cols {
 		col.Width = float64(withHeader[HeaderDoc[i]])
 	}
