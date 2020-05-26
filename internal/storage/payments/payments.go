@@ -1,9 +1,12 @@
 package payments
 
 import (
+	"fmt"
 	"unicode/utf8"
 
+	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/mpuzanov/parser-bank/internal/domain/model"
+	"github.com/mpuzanov/parser-bank/pkg/logger"
 	"github.com/tealeg/xlsx"
 )
 
@@ -29,7 +32,7 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 
 	file = xlsx.NewFile()
 
-	sheet, err = file.AddSheet("Sheet1")
+	sheet, err = file.AddSheet("Платежи")
 	if err != nil {
 		return err
 	}
@@ -117,5 +120,177 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 		return err
 	}
 
+	return nil
+}
+
+//SaveToExcel2 lib Excelize
+func (s *ListPayments) SaveToExcel2(fileName string) error {
+	logger.LogSugar.Debugf("SaveToExcel2: %s", fileName)
+
+	file := excelize.NewFile()
+
+	sheetName := "Sheet1"
+	indexSheet := file.NewSheet(sheetName)
+	file.SetActiveSheet(indexSheet)
+
+	expDate := "dd.MM.yyyy"
+	styleDate, err := file.NewStyle(&excelize.Style{CustomNumFmt: &expDate})
+	if err != nil {
+		return err
+	}
+	styleHeader, err := file.NewStyle(`{"font":{"bold":true,"family":"Times New Roman","size":12}}`)
+	if err != nil {
+		return err
+	}
+	styleFloat, err := file.NewStyle(`{"number_format": 4}`)
+	if err != nil {
+		return err
+	}
+	//Зададим наименование колонок
+	for index := 1; index <= len(HeaderDoc); index++ {
+		axis, _ := excelize.CoordinatesToCellName(index, 1)
+		file.SetCellValue(sheetName, axis, HeaderDoc[index-1])
+		//err = file.SetCellStyle(sheetName, axis, axis, styleHeader)
+	}
+	if err := file.SetCellStyle(sheetName, "A1", "G1", styleHeader); err != nil {
+		return err
+	}
+	//данные
+	rowNo := 1
+	for index := 0; index < len(s.Db); index++ {
+		rowNo++
+		// добавляем поля в строке
+		// последовательность полей:  "Occ", "Address", "Date", "Value", "Commission", "Fio", "PaymentAccount"
+		colNo := 1 //Occ
+		axis, _ := excelize.CoordinatesToCellName(colNo, rowNo)
+		file.SetCellInt(sheetName, axis, s.Db[index].Occ)
+
+		colNo = 2 //Address
+		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
+		file.SetCellStr(sheetName, axis, s.Db[index].Address)
+
+		colNo = 3 //Date
+		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
+		file.SetCellValue(sheetName, axis, s.Db[index].Date)
+		if err := file.SetCellStyle(sheetName, axis, axis, styleDate); err != nil {
+			return err
+		}
+
+		colNo = 4 //Value
+		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
+		if err := file.SetCellFloat(sheetName, axis, s.Db[index].Value, 2, 64); err != nil {
+			return err
+		}
+		if err := file.SetCellStyle(sheetName, axis, axis, styleFloat); err != nil {
+			return err
+		}
+
+		colNo = 5 //Commission
+		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
+		if err := file.SetCellFloat(sheetName, axis, s.Db[index].Commission, 2, 64); err != nil {
+			return err
+		}
+		if err := file.SetCellStyle(sheetName, axis, axis, styleFloat); err != nil {
+			return err
+		}
+
+		colNo = 6 //Fio
+		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
+		file.SetCellStr(sheetName, axis, s.Db[index].Fio)
+
+		colNo = 7 //PaymentAccount
+		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
+		file.SetCellStr(sheetName, axis, s.Db[index].PaymentAccount)
+	}
+
+	file.SetColWidth(sheetName, "A", "G", 15)
+	file.SetColWidth(sheetName, "B", "B", 40)
+	file.SetColWidth(sheetName, "G", "G", 25)
+
+	if err := file.SaveAs(fileName); err != nil {
+		return err
+	}
+	return nil
+}
+
+//SaveToExcelStream lib Excelize
+func (s *ListPayments) SaveToExcelStream(fileName string) error {
+	logger.LogSugar.Debugf("SaveToExcelStream: %s", fileName)
+	file := excelize.NewFile()
+	sheetName := "Sheet1"
+	streamWriter, err := file.NewStreamWriter(sheetName)
+	if err != nil {
+		return err
+	}
+
+	expDate := "dd.MM.yyyy"
+	styleDate, err := file.NewStyle(&excelize.Style{CustomNumFmt: &expDate})
+	if err != nil {
+		return err
+	}
+	expFloat := "#,##0.00"
+	styleFloat, err := file.NewStyle(&excelize.Style{CustomNumFmt: &expFloat})
+	if err != nil {
+		return err
+	}
+	styleHeader, err := file.NewStyle(`{"font":{"bold":true,"family":"Times New Roman","size":12}}`)
+	if err != nil {
+		return err
+	}
+
+	CountCol := len(HeaderDoc)
+	rowHeader := make([]interface{}, len(HeaderDoc))
+	for i := 0; i < CountCol; i++ {
+		rowHeader[i] = HeaderDoc[i]
+	}
+	if err := streamWriter.SetRow("A1", rowHeader); err != nil {
+		return err
+	}
+
+	//данные
+	rowNo := 1
+	for index := 0; index < len(s.Db); index++ {
+		row := make([]interface{}, CountCol)
+		rowNo++
+
+		row[0] = s.Db[index].Occ
+		row[1] = s.Db[index].Address
+		row[2] = s.Db[index].Date
+		row[3] = s.Db[index].Value
+		row[4] = s.Db[index].Commission
+		row[5] = s.Db[index].Fio
+		row[6] = s.Db[index].PaymentAccount
+
+		cell, _ := excelize.CoordinatesToCellName(1, rowNo)
+		if err := streamWriter.SetRow(cell, row); err != nil {
+			return err
+		}
+	}
+	if err := streamWriter.Flush(); err != nil {
+		return err
+	}
+	file.SetColWidth(sheetName, "A", "G", 15)
+	file.SetColWidth(sheetName, "B", "B", 40)
+	file.SetColWidth(sheetName, "G", "G", 25)
+
+	//if err := file.SetColStyle(sheetName, "C", styleDate); err != nil { // по колонке не работает стиль
+	if err = file.SetCellStyle(sheetName, "C2", fmt.Sprintf("C%d", len(s.Db)+1), styleDate); err != nil {
+		return err
+	}
+	if err := file.SetCellStyle(sheetName, "D2", fmt.Sprintf("D%d", len(s.Db)+1), styleFloat); err != nil {
+		return err
+	}
+
+	if err = file.SetCellStyle(sheetName, "E2", fmt.Sprintf("E%d", len(s.Db)+1), styleFloat); err != nil {
+		return err
+	}
+
+	if err = file.SetCellStyle(sheetName, "A1", "G1", styleHeader); err != nil {
+		return err
+	}
+
+	if err := file.SaveAs(fileName); err != nil {
+		return err
+	}
 	return nil
 }
