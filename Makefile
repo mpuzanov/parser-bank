@@ -32,7 +32,7 @@ test:
 
 mod:
 	go mod verify
-	go mod vendor
+	#go mod vendor
 	go mod tidy
 
 run:
