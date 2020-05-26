@@ -3,6 +3,7 @@ module github.com/mpuzanov/parser-bank
 go 1.14
 
 require (
+	github.com/360EntSecGroup-Skylar/excelize/v2 v2.2.0
 	github.com/gorilla/mux v1.7.4
 	github.com/softlandia/cpd v0.0.0-20200222055044-8221c54f59a0
 	github.com/spf13/cobra v1.0.0
