@@ -139,12 +139,13 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 			s.logger.Error("TempFile", zap.Error(err))
 		}
 		nameFile := tmpfile.Name()
-		err = valuesTotal.SaveToExcel(nameFile)
+		err = valuesTotal.SaveToExcelStream(nameFile)
+		//err = valuesTotal.SaveToExcel2(nameFile)
 		if err != nil {
 			s.logger.Error("SaveToExcel", zap.Error(err))
 		} else {
 			nameFile := "parser-bank/download/" + filepath.Base(nameFile)
-			url := fmt.Sprintf("<a href=\"%s\" target=\"_blank\">Ссылка на файл</a>", nameFile)
+			url := fmt.Sprintf("<a href=\"%s\" target=\"_blank\">Скачать файл</a>", nameFile)
 			strFiles += url
 		}
 
