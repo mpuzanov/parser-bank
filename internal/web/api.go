@@ -139,8 +139,9 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 			s.logger.Error("TempFile", zap.Error(err))
 		}
 		nameFile := tmpfile.Name()
-		err = valuesTotal.SaveToExcelStream(nameFile)
+		//err = valuesTotal.SaveToExcel(nameFile)
 		//err = valuesTotal.SaveToExcel2(nameFile)
+		//err = valuesTotal.SaveToExcelStream(nameFile)
 		if err != nil {
 			s.logger.Error("SaveToExcel", zap.Error(err))
 		} else {

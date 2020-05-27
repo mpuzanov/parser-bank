@@ -13,6 +13,11 @@ var (
 )
 
 func TestMain(m *testing.M) {
+	loggerTest, _ := zap.NewProduction() //InfoLevel json stderr
+	//loggerTest, _ := zap.NewDevelopment() //console DebugLevel stderr
+	//loggerTest := zap.NewExample() // json Stdout DebugLevel
+	zap.ReplaceGlobals(loggerTest)
+
 	fb := NewFormatBanks()
 	err := fb.Open()
 	if err != nil {
@@ -23,9 +28,6 @@ func TestMain(m *testing.M) {
 }
 
 func TestDetectFormatBank(t *testing.T) {
-	loggerTest, _ := zap.NewProduction() //InfoLevel json stderr
-	//loggerTest, _ := zap.NewDevelopment() //console DebugLevel stderr
-	//loggerTest := zap.NewExample() // json Stdout DebugLevel
 
 	testCases := []struct {
 		desc string
@@ -34,16 +36,16 @@ func TestDetectFormatBank(t *testing.T) {
 		err  error
 	}{
 		{
-			desc: "Тест Почта_D7L1A3S5",
+			desc: "Тест Почта_D7L1A3S5C6F2",
 			text: `
 			6149829;;Пушкинская, 240А, 50;;491;6.38;30.08.2018;
 			6258413;;Орджоникидзе, 26А, 18;;50.11;0.65;30.08.2018;
 			`,
-			want: "Почта_D7L1A3S5",
+			want: "Почта_D7L1A3S5C6F2",
 			err:  nil,
 		},
 		{
-			desc: "Тест Почта_D8L1A3S5С6",
+			desc: "Тест Почта_D8L1A3S5С6F2",
 			text: `
 			19;7536.12;30.08.2018;03.09.2018;
 			6149829;;Пушкинская, 240А, 50;;491;6.38;1731;30.08.2018;426008;42600805;
@@ -52,7 +54,7 @@ func TestDetectFormatBank(t *testing.T) {
 			6083967;;Т.Барамзиной, 30, 53;;289.12;3.76;5149;30.08.2018;426067;42606702;
 			6088539;;Фруктовая, 27, 39;;543.5;7.07;16009;30.08.2018;426054;42605401;
 			`,
-			want: "Почта_D8L1A3S5С6",
+			want: "Почта_D8L1A3S5С6F2",
 			err:  nil,
 		},
 		{
@@ -130,7 +132,7 @@ func TestDetectFormatBank(t *testing.T) {
 	for _, tC := range testCases {
 		t.Run(tC.desc, func(t *testing.T) {
 			//reader := strings.NewReader(tC.text)
-			got, err := fbStore.detectFormatBank([]byte(tC.text), loggerTest)
+			got, err := fbStore.detectFormatBank([]byte(tC.text))
 			if err != nil {
 				t.Errorf("%s error: %v", tC.desc, err)
 			}

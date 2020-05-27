@@ -28,7 +28,10 @@ lint:
 
 test:
 	go test -v ${GO_TEST_DIRS}
-	#go test -race -count 100 ${GO_TEST_DIRS}
+	@#go test -race -count 100 ${GO_TEST_DIRS}
+
+bench:
+	go test -benchmem -bench=. ${GO_TEST_DIRS}
 
 mod:
 	go mod verify

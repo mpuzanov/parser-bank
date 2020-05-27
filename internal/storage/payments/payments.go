@@ -1,13 +1,12 @@
 package payments
 
 import (
-	"fmt"
 	"unicode/utf8"
 
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
 	"github.com/mpuzanov/parser-bank/internal/domain/model"
-	"github.com/mpuzanov/parser-bank/pkg/logger"
 	"github.com/tealeg/xlsx"
+	"go.uber.org/zap"
 )
 
 // ListPayments структура для хранения платежей
@@ -125,7 +124,7 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 
 //SaveToExcel2 lib Excelize
 func (s *ListPayments) SaveToExcel2(fileName string) error {
-	logger.LogSugar.Debugf("SaveToExcel2: %s", fileName)
+	zap.S().Debugf("SaveToExcel2: %s", fileName)
 
 	file := excelize.NewFile()
 
@@ -215,7 +214,7 @@ func (s *ListPayments) SaveToExcel2(fileName string) error {
 
 //SaveToExcelStream lib Excelize
 func (s *ListPayments) SaveToExcelStream(fileName string) error {
-	logger.LogSugar.Debugf("SaveToExcelStream: %s", fileName)
+	zap.S().Debugf("SaveToExcelStream: %s", fileName)
 	file := excelize.NewFile()
 	sheetName := "Sheet1"
 	streamWriter, err := file.NewStreamWriter(sheetName)
@@ -239,9 +238,9 @@ func (s *ListPayments) SaveToExcelStream(fileName string) error {
 	}
 
 	CountCol := len(HeaderDoc)
-	rowHeader := make([]interface{}, len(HeaderDoc))
+	rowHeader := make([]interface{}, CountCol)
 	for i := 0; i < CountCol; i++ {
-		rowHeader[i] = HeaderDoc[i]
+		rowHeader[i] = excelize.Cell{StyleID: styleHeader, Value: HeaderDoc[i]}
 	}
 	if err := streamWriter.SetRow("A1", rowHeader); err != nil {
 		return err
@@ -255,9 +254,9 @@ func (s *ListPayments) SaveToExcelStream(fileName string) error {
 
 		row[0] = s.Db[index].Occ
 		row[1] = s.Db[index].Address
-		row[2] = s.Db[index].Date
-		row[3] = s.Db[index].Value
-		row[4] = s.Db[index].Commission
+		row[2] = excelize.Cell{StyleID: styleDate, Value: s.Db[index].Date}
+		row[3] = excelize.Cell{StyleID: styleFloat, Value: s.Db[index].Value}
+		row[4] = excelize.Cell{StyleID: styleFloat, Value: s.Db[index].Commission}
 		row[5] = s.Db[index].Fio
 		row[6] = s.Db[index].PaymentAccount
 
@@ -266,28 +265,30 @@ func (s *ListPayments) SaveToExcelStream(fileName string) error {
 			return err
 		}
 	}
+
 	if err := streamWriter.Flush(); err != nil {
 		return err
 	}
-	file.SetColWidth(sheetName, "A", "G", 15)
+
+	file.SetColWidth(sheetName, "A", "G", 15) // тормозит
 	file.SetColWidth(sheetName, "B", "B", 40)
 	file.SetColWidth(sheetName, "G", "G", 25)
 
-	//if err := file.SetColStyle(sheetName, "C", styleDate); err != nil { // по колонке не работает стиль
-	if err = file.SetCellStyle(sheetName, "C2", fmt.Sprintf("C%d", len(s.Db)+1), styleDate); err != nil {
-		return err
-	}
-	if err := file.SetCellStyle(sheetName, "D2", fmt.Sprintf("D%d", len(s.Db)+1), styleFloat); err != nil {
-		return err
-	}
-
-	if err = file.SetCellStyle(sheetName, "E2", fmt.Sprintf("E%d", len(s.Db)+1), styleFloat); err != nil {
-		return err
-	}
-
-	if err = file.SetCellStyle(sheetName, "A1", "G1", styleHeader); err != nil {
-		return err
-	}
+	// if err = file.SetCellStyle(sheetName, "A1", "G1", styleHeader); err != nil {
+	// 	return err
+	// }
+	// if err = file.SetCellStyle(sheetName, "C2", fmt.Sprintf("C%d", len(s.Db)+1), styleDate); err != nil {
+	// 	return err
+	// }
+	// if err := file.SetCellStyle(sheetName, "D2", fmt.Sprintf("D%d", len(s.Db)+1), styleFloat); err != nil {
+	// 	return err
+	// }
+	// if err = file.SetCellStyle(sheetName, "E2", fmt.Sprintf("E%d", len(s.Db)+1), styleFloat); err != nil {
+	// 	return err
+	// }
+	// if err = file.SetCellStyle(sheetName, "A1", "G1", styleHeader); err != nil {
+	// 	return err
+	// }
 
 	if err := file.SaveAs(fileName); err != nil {
 		return err

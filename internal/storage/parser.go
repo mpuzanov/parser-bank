@@ -31,7 +31,7 @@ func (s *ListFormatBanks) ReadFile(filePath string, logger *zap.Logger) ([]model
 		return nil, fmt.Errorf("ошибка чтения файла реестра %s. %w", filePath, err)
 	}
 	//определяем формат файла реестра
-	sf, err := s.detectFormatBank(b, logger)
+	sf, err := s.detectFormatBank(b)
 	if err != nil {
 		return nil, fmt.Errorf("ошибка определения формата файла реестра. %w", err)
 	}
@@ -69,7 +69,7 @@ func (s *ListFormatBanks) ReadFile(filePath string, logger *zap.Logger) ([]model
 			continue
 		}
 
-		val, err := s.getPaymentsVal(line, sf, logger)
+		val, err := s.getPaymentsVal(line, sf)
 		if err != nil {
 			return nil, fmt.Errorf("ошибка конвертации. %w", err)
 		}
@@ -86,29 +86,29 @@ func (s *ListFormatBanks) ReadFile(filePath string, logger *zap.Logger) ([]model
 }
 
 // detectFormatBank определить формат реестра платежей
-func (s *ListFormatBanks) detectFormatBank(r []byte, logger *zap.Logger) (*model.FormatBank, error) {
+func (s *ListFormatBanks) detectFormatBank(r []byte) (*model.FormatBank, error) {
 
 	if len(s.Db) == 0 {
 		return nil, errors.ErrListFormatEmpty
 	}
 	for _, fm := range s.Db {
 
-		got, err := s.checkBankReestr(r, &fm, logger)
+		got, err := s.checkBankReestr(r, &fm)
 		if err == nil && got {
 			zap.S().Debug("подошёл", zap.String("формат", fm.Name))
 			return &fm, nil
 		}
-		logger.Debug("не подходит", zap.String("формат", fm.Name), zap.Error(err))
+		zap.S().Debug("не подходит", zap.String("формат", fm.Name), zap.Error(err))
 	}
 	return nil, nil
 }
 
 // checkBankReestr проверяем подходит ли формат
-func (s *ListFormatBanks) checkBankReestr(r []byte, sf *model.FormatBank, logger *zap.Logger) (bool, error) {
+func (s *ListFormatBanks) checkBankReestr(r []byte, sf *model.FormatBank) (bool, error) {
 	var err error
 	res := false
 	reader := bufio.NewReader(strings.NewReader(string(r)))
-	logger.Sugar().Debugf("Проверяем checkBankReestr: %s, Comma: `%s`, Comment: `%s`", sf.Name, sf.CharRazd, sf.CharZag)
+	zap.S().Debugf("Проверяем checkBankReestr: %s, Comma: `%s`, Comment: `%s`", sf.Name, sf.CharRazd, sf.CharZag)
 	for {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
@@ -124,11 +124,11 @@ func (s *ListFormatBanks) checkBankReestr(r []byte, sf *model.FormatBank, logger
 		if strings.HasPrefix(line, sf.CharZag) {
 			continue
 		}
-		_, err = s.getPaymentsVal(line, sf, logger)
+		_, err = s.getPaymentsVal(line, sf)
 		if err != nil {
 			return res, err
 		}
-		logger.Sugar().Debug("Выбор: ", sf.Name)
+		zap.S().Debug("Выбор: ", sf.Name)
 		res = true
 		break
 	}
@@ -136,24 +136,27 @@ func (s *ListFormatBanks) checkBankReestr(r []byte, sf *model.FormatBank, logger
 }
 
 // getPaymentsVal конвертируем строку файла в структуру платежа
-func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logger *zap.Logger) (model.Payment, error) {
+func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank) (model.Payment, error) {
 	var res model.Payment
 	var err error
 
 	record := strings.Split(line, sf.CharRazd)
-	if sf.Name == "Сбербанк_D1L6A7S8C10" {
-		logger.Sugar().Debug("record: ", record)
-	}
+	zap.S().Debug("sf: ", sf)
+	zap.S().Debug("record: ", record)
+	//logger.LogSugar.Debug("sf: ", sf)
+	//if sf.Name == "Почта_D7L1A3S5C6F2" {
+	//logger.LogSugar.Debug("record: ", record)
+	//}
 
 	countField := len(record)
 	// for i := 0; i < countField; i++ {
-	// 	logger.Sugar().Debugf("Field %d: %s", i, record[i])
+	// 	logger.LogSugar.Debugf("Field %d: %s", i, record[i])
 	// }
 	if countField < 4 {
 		return res, errors.ErrFewFields
 	}
 
-	//logger.Sugar().Debug("countField: ", countField)
+	//logger.LogSugar.Debug("countField: ", countField)
 	// проверяем дату
 	if sf.DataPlatNo > countField {
 		return res, errors.ErrFewFields
@@ -164,7 +167,7 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logg
 	if err != nil {
 		return res, err
 	}
-	logger.Sugar().Debug("date: ", res.Date)
+	zap.S().Debug("date: ", res.Date)
 
 	// проверяем сумму
 	if sf.SummaNo > countField {
@@ -176,7 +179,7 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logg
 	if err != nil {
 		return res, err
 	}
-	logger.Sugar().Debug("Summa: ", res.Value)
+	zap.S().Debug("Summa: ", res.Value)
 
 	// проверяем лицевой счёт
 	if sf.LicNo > countField {
@@ -199,7 +202,7 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logg
 			return res, err
 		}
 	}
-	logger.Sugar().Debug("occ: ", res.Occ)
+	zap.S().Debug("occ: ", res.Occ)
 
 	if sf.CommissNo > 0 {
 		if sf.CommissNo > countField {
@@ -211,7 +214,7 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logg
 		if err != nil {
 			return res, err
 		}
-		logger.Sugar().Debug("Commission: ", res.Commission)
+		zap.S().Debug("Commission: ", res.Commission)
 	}
 	// проверяем адрес
 	if sf.AddressNo > countField {
@@ -242,7 +245,6 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank, logg
 		}
 		res.Fio = strings.TrimSpace(tmpStr)
 	}
-	//logger.Sugar().Info("getPaymentsVal", zap.Any("Fields", res))
 
 	return res, err
 }
