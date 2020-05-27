@@ -148,7 +148,9 @@ func (s *ListPayments) SaveToExcel2(fileName string) error {
 	//Зададим наименование колонок
 	for index := 1; index <= len(HeaderDoc); index++ {
 		axis, _ := excelize.CoordinatesToCellName(index, 1)
-		file.SetCellValue(sheetName, axis, HeaderDoc[index-1])
+		if err := file.SetCellValue(sheetName, axis, HeaderDoc[index-1]); err != nil {
+			return err
+		}
 		//err = file.SetCellStyle(sheetName, axis, axis, styleHeader)
 	}
 	if err := file.SetCellStyle(sheetName, "A1", "G1", styleHeader); err != nil {
@@ -162,11 +164,15 @@ func (s *ListPayments) SaveToExcel2(fileName string) error {
 		// последовательность полей:  "Occ", "Address", "Date", "Value", "Commission", "Fio", "PaymentAccount"
 		colNo := 1 //Occ
 		axis, _ := excelize.CoordinatesToCellName(colNo, rowNo)
-		file.SetCellInt(sheetName, axis, s.Db[index].Occ)
+		if err := file.SetCellInt(sheetName, axis, s.Db[index].Occ); err != nil {
+			return err
+		}
 
 		colNo = 2 //Address
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
-		file.SetCellStr(sheetName, axis, s.Db[index].Address)
+		if err := file.SetCellStr(sheetName, axis, s.Db[index].Address); err != nil {
+			return err
+		}
 
 		colNo = 3 //Date
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
@@ -195,16 +201,27 @@ func (s *ListPayments) SaveToExcel2(fileName string) error {
 
 		colNo = 6 //Fio
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
-		file.SetCellStr(sheetName, axis, s.Db[index].Fio)
+		if err := file.SetCellStr(sheetName, axis, s.Db[index].Fio); err != nil {
+			return err
+		}
 
 		colNo = 7 //PaymentAccount
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
-		file.SetCellStr(sheetName, axis, s.Db[index].PaymentAccount)
+		if err := file.SetCellStr(sheetName, axis, s.Db[index].PaymentAccount); err != nil {
+			return err
+		}
+
 	}
 
-	file.SetColWidth(sheetName, "A", "G", 15)
-	file.SetColWidth(sheetName, "B", "B", 40)
-	file.SetColWidth(sheetName, "G", "G", 25)
+	if err := file.SetColWidth(sheetName, "A", "G", 15); err != nil {
+		return err
+	}
+	if err := file.SetColWidth(sheetName, "B", "B", 40); err != nil {
+		return err
+	}
+	if err := file.SetColWidth(sheetName, "G", "G", 25); err != nil {
+		return err
+	}
 
 	if err := file.SaveAs(fileName); err != nil {
 		return err

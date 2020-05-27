@@ -19,7 +19,7 @@ func BenchmarkSaveToExcel(b *testing.B) {
 	defer os.Remove(fileName)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		testPayments.SaveToExcel(fileName)
+		_ = testPayments.SaveToExcel(fileName)
 	}
 }
 
@@ -40,7 +40,7 @@ func BenchmarkSaveToExcel2(b *testing.B) {
 	defer os.Remove(fileName)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		testPayments.SaveToExcel2(fileName)
+		_ = testPayments.SaveToExcel2(fileName)
 	}
 }
 
@@ -65,7 +65,7 @@ func BenchmarkSaveToExcelStream(b *testing.B) {
 	defer os.Remove(fileName)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		testPayments.SaveToExcelStream(fileName)
+		_ = testPayments.SaveToExcelStream(fileName)
 	}
 }
 
@@ -98,7 +98,7 @@ func BenchmarkPrepareTestData2(b *testing.B) {
 func prepareTestData() *ListPayments {
 	// создаём тестовый слайс платежей
 	tp := ListPayments{}
-	tp.Db = make([]model.Payment, countPayments, countPayments)
+	tp.Db = make([]model.Payment, countPayments)
 	for i := 0; i < countPayments; i++ {
 		tp.Db[i].Occ = rand.Intn(999999)
 		tp.Db[i].Address = "Пушкинская, 240А, 50"
