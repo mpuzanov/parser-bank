@@ -176,7 +176,9 @@ func (s *ListPayments) SaveToExcel2(fileName string) error {
 
 		colNo = 3 //Date
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
-		file.SetCellValue(sheetName, axis, s.Db[index].Date)
+		if err := file.SetCellValue(sheetName, axis, s.Db[index].Date); err != nil {
+			return err
+		}
 		if err := file.SetCellStyle(sheetName, axis, axis, styleDate); err != nil {
 			return err
 		}
@@ -287,9 +289,16 @@ func (s *ListPayments) SaveToExcelStream(fileName string) error {
 		return err
 	}
 
-	file.SetColWidth(sheetName, "A", "G", 15) // тормозит
-	file.SetColWidth(sheetName, "B", "B", 40)
-	file.SetColWidth(sheetName, "G", "G", 25)
+	// тормозит установка ширины колонок
+	if err := file.SetColWidth(sheetName, "A", "G", 15); err != nil {
+		return err
+	}
+	if err := file.SetColWidth(sheetName, "B", "B", 40); err != nil {
+		return err
+	}
+	if err := file.SetColWidth(sheetName, "G", "G", 25); err != nil {
+		return err
+	}
 
 	// if err = file.SetCellStyle(sheetName, "A1", "G1", styleHeader); err != nil {
 	// 	return err
