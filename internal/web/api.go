@@ -51,18 +51,8 @@ func (s *myHandler) DownloadFile(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	fileName := vars["file"]
 	//fmt.Fprint(w, "file=", fileName)
+	w.Header().Add("Content-Disposition", "Attachment")
 	http.ServeFile(w, r, path.Join(pathDownload, fileName))
-
-	// modtime := time.Now()
-	// content := randomContent(modtime.UnixNano(), 1024)
-
-	// // ServeContent uses the fileName for mime detection
-	// //const fileName = "random.txt"
-
-	// // tell the browser the returned content should be downloaded
-	// w.Header().Add("Content-Disposition", "Attachment")
-
-	// http.ServeContent(w, r, fileName, modtime, content)
 }
 
 // UploadData .
@@ -134,30 +124,30 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		}
 		strFiles += fmt.Sprintf("Итого платежей: %d<br>", len(valuesTotal.Db))
 
-		tmpfile, err := ioutil.TempFile(pathDownload, "file*.xlsx")
-		if err != nil {
-			s.logger.Error("TempFile", zap.Error(err))
-		}
-		nameFile := tmpfile.Name()
-		err = valuesTotal.SaveToExcel(nameFile)
-		//err = valuesTotal.SaveToExcel2(nameFile)
-		//err = valuesTotal.SaveToExcelStream(nameFile)
+		nameFileXls, err := valuesTotal.SaveToExcel(pathDownload, "file1*.xlsx")
+		//nameFileXls, err := valuesTotal.SaveToExcel2(pathDownload, "file1*.xlsx")
+		//nameFileXls, err := valuesTotal.SaveToExcelStream(pathDownload, "file1*.xlsx")
 		if err != nil {
 			s.logger.Error("SaveToExcel", zap.Error(err))
-		} else {
-			nameFile := "parser-bank/download/" + filepath.Base(nameFile)
-			url := fmt.Sprintf("<a href=\"%s\" target=\"_blank\">Скачать файл</a>", nameFile)
-			strFiles += url
 		}
-
-		parsedJSON, err := json.Marshal(valuesTotal)
+		nameFileJSON, err := valuesTotal.SaveToJSON(pathDownload, "file1*.json")
 		if err != nil {
-			s.logger.Error("Error json.Marshal", zap.Error(err))
+			s.logger.Error("SaveToJSON", zap.Error(err))
 		}
-		jsData, err := Prettyprint(parsedJSON)
+		nameFileXML, err := valuesTotal.SaveToXML(pathDownload, "file1*.xml")
 		if err != nil {
-			s.logger.Error("Error Prettyprint", zap.Error(err))
+			s.logger.Error("SaveToJSON", zap.Error(err))
 		}
+		nameFileXls = "parser-bank/download/" + filepath.Base(nameFileXls)
+		nameFileJSON = "parser-bank/download/" + filepath.Base(nameFileJSON)
+		nameFileXML = "parser-bank/download/" + filepath.Base(nameFileXML)
+		s.logger.Sugar().Debugf("%s %s %s", nameFileXls, nameFileJSON, nameFileXML)
+		url := fmt.Sprintf(`Скачать файл (
+			<a href=%s target=\"_blank\">xlsx</a>,
+			<a href=%s target=\"_blank\">json</a>,
+			<a href=%s target=\"_blank\">xml</a>
+			)<br>`, nameFileXls, nameFileJSON, nameFileXML)
+		strFiles += url
 
 		t, err := template.ParseFiles(fileTemplate)
 		if err != nil {
@@ -167,8 +157,7 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		}
 		data := struct {
 			UploadFiles template.HTML
-			ContentJSON string
-		}{UploadFiles: template.HTML(strFiles), ContentJSON: string(jsData)}
+		}{UploadFiles: template.HTML(strFiles)}
 		err = t.Execute(w, data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)

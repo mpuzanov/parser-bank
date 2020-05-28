@@ -1,6 +1,11 @@
 package payments
 
 import (
+	"bytes"
+	"encoding/json"
+	"encoding/xml"
+	"io/ioutil"
+	"os"
 	"unicode/utf8"
 
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
@@ -21,7 +26,7 @@ var (
 )
 
 // SaveToExcel сохраняем данные в файл
-func (s *ListPayments) SaveToExcel(fileName string) error {
+func (s *ListPayments) SaveToExcel(path, templateFile string) (string, error) {
 
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
@@ -29,13 +34,21 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 	var cell *xlsx.Cell
 	var err error
 
-	file = xlsx.NewFile()
-
-	sheet, err = file.AddSheet("Платежи")
-	if err != nil {
-		return err
+	if templateFile == "" {
+		templateFile = "file*.xlsx"
 	}
+	tmpfile, err := ioutil.TempFile(path, templateFile)
+	if err != nil {
+		return "", err
+	}
+	defer tmpfile.Close()
+	fileName := tmpfile.Name()
 
+	file = xlsx.NewFile()
+	sheet, err = file.AddSheet("Sheet1")
+	if err != nil {
+		return "", err
+	}
 	headerFont := xlsx.NewFont(12, "Calibri")
 	headerFont.Bold = true
 	headerFont.Underline = false
@@ -116,14 +129,23 @@ func (s *ListPayments) SaveToExcel(fileName string) error {
 
 	err = file.Save(fileName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
-	return nil
+	return fileName, nil
 }
 
 //SaveToExcel2 lib Excelize
-func (s *ListPayments) SaveToExcel2(fileName string) error {
+func (s *ListPayments) SaveToExcel2(path, templateFile string) (string, error) {
+	if templateFile == "" {
+		templateFile = "file*.xlsx"
+	}
+	tmpfile, err := ioutil.TempFile(path, templateFile)
+	if err != nil {
+		return "", err
+	}
+	defer tmpfile.Close()
+	fileName := tmpfile.Name()
 	zap.S().Debugf("SaveToExcel2: %s", fileName)
 
 	file := excelize.NewFile()
@@ -135,26 +157,26 @@ func (s *ListPayments) SaveToExcel2(fileName string) error {
 	expDate := "dd.MM.yyyy"
 	styleDate, err := file.NewStyle(&excelize.Style{CustomNumFmt: &expDate})
 	if err != nil {
-		return err
+		return "", err
 	}
 	styleHeader, err := file.NewStyle(`{"font":{"bold":true,"family":"Times New Roman","size":12}}`)
 	if err != nil {
-		return err
+		return "", err
 	}
 	styleFloat, err := file.NewStyle(`{"number_format": 4}`)
 	if err != nil {
-		return err
+		return "", err
 	}
 	//Зададим наименование колонок
 	for index := 1; index <= len(HeaderDoc); index++ {
 		axis, _ := excelize.CoordinatesToCellName(index, 1)
 		if err := file.SetCellValue(sheetName, axis, HeaderDoc[index-1]); err != nil {
-			return err
+			return "", err
 		}
 		//err = file.SetCellStyle(sheetName, axis, axis, styleHeader)
 	}
 	if err := file.SetCellStyle(sheetName, "A1", "G1", styleHeader); err != nil {
-		return err
+		return "", err
 	}
 	//данные
 	rowNo := 1
@@ -165,95 +187,104 @@ func (s *ListPayments) SaveToExcel2(fileName string) error {
 		colNo := 1 //Occ
 		axis, _ := excelize.CoordinatesToCellName(colNo, rowNo)
 		if err := file.SetCellInt(sheetName, axis, s.Db[index].Occ); err != nil {
-			return err
+			return "", err
 		}
 
 		colNo = 2 //Address
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
 		if err := file.SetCellStr(sheetName, axis, s.Db[index].Address); err != nil {
-			return err
+			return "", err
 		}
 
 		colNo = 3 //Date
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
 		if err := file.SetCellValue(sheetName, axis, s.Db[index].Date); err != nil {
-			return err
+			return "", err
 		}
 		if err := file.SetCellStyle(sheetName, axis, axis, styleDate); err != nil {
-			return err
+			return "", err
 		}
 
 		colNo = 4 //Value
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
 		if err := file.SetCellFloat(sheetName, axis, s.Db[index].Value, 2, 64); err != nil {
-			return err
+			return "", err
 		}
 		if err := file.SetCellStyle(sheetName, axis, axis, styleFloat); err != nil {
-			return err
+			return "", err
 		}
 
 		colNo = 5 //Commission
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
 		if err := file.SetCellFloat(sheetName, axis, s.Db[index].Commission, 2, 64); err != nil {
-			return err
+			return "", err
 		}
 		if err := file.SetCellStyle(sheetName, axis, axis, styleFloat); err != nil {
-			return err
+			return "", err
 		}
 
 		colNo = 6 //Fio
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
 		if err := file.SetCellStr(sheetName, axis, s.Db[index].Fio); err != nil {
-			return err
+			return "", err
 		}
 
 		colNo = 7 //PaymentAccount
 		axis, _ = excelize.CoordinatesToCellName(colNo, rowNo)
 		if err := file.SetCellStr(sheetName, axis, s.Db[index].PaymentAccount); err != nil {
-			return err
+			return "", err
 		}
 
 	}
 
 	if err := file.SetColWidth(sheetName, "A", "G", 15); err != nil {
-		return err
+		return "", err
 	}
 	if err := file.SetColWidth(sheetName, "B", "B", 40); err != nil {
-		return err
+		return "", err
 	}
 	if err := file.SetColWidth(sheetName, "G", "G", 25); err != nil {
-		return err
+		return "", err
 	}
 
 	if err := file.SaveAs(fileName); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return fileName, nil
 }
 
 //SaveToExcelStream lib Excelize
-func (s *ListPayments) SaveToExcelStream(fileName string) error {
+func (s *ListPayments) SaveToExcelStream(path, templateFile string) (string, error) {
+	if templateFile == "" {
+		templateFile = "file*.xlsx"
+	}
+	tmpfile, err := ioutil.TempFile(path, templateFile)
+	if err != nil {
+		return "", err
+	}
+	defer tmpfile.Close()
+	fileName := tmpfile.Name()
 	zap.S().Debugf("SaveToExcelStream: %s", fileName)
 	file := excelize.NewFile()
 	sheetName := "Sheet1"
 	streamWriter, err := file.NewStreamWriter(sheetName)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	expDate := "dd.MM.yyyy"
 	styleDate, err := file.NewStyle(&excelize.Style{CustomNumFmt: &expDate})
 	if err != nil {
-		return err
+		return "", err
 	}
 	expFloat := "#,##0.00"
 	styleFloat, err := file.NewStyle(&excelize.Style{CustomNumFmt: &expFloat})
 	if err != nil {
-		return err
+		return "", err
 	}
 	styleHeader, err := file.NewStyle(`{"font":{"bold":true,"family":"Times New Roman","size":12}}`)
 	if err != nil {
-		return err
+		return "", err
 	}
 
 	CountCol := len(HeaderDoc)
@@ -262,7 +293,7 @@ func (s *ListPayments) SaveToExcelStream(fileName string) error {
 		rowHeader[i] = excelize.Cell{StyleID: styleHeader, Value: HeaderDoc[i]}
 	}
 	if err := streamWriter.SetRow("A1", rowHeader); err != nil {
-		return err
+		return "", err
 	}
 
 	//данные
@@ -281,23 +312,23 @@ func (s *ListPayments) SaveToExcelStream(fileName string) error {
 
 		cell, _ := excelize.CoordinatesToCellName(1, rowNo)
 		if err := streamWriter.SetRow(cell, row); err != nil {
-			return err
+			return "", err
 		}
 	}
 
 	if err := streamWriter.Flush(); err != nil {
-		return err
+		return "", err
 	}
 
 	// тормозит установка ширины колонок
 	if err := file.SetColWidth(sheetName, "A", "G", 15); err != nil {
-		return err
+		return "", err
 	}
 	if err := file.SetColWidth(sheetName, "B", "B", 40); err != nil {
-		return err
+		return "", err
 	}
 	if err := file.SetColWidth(sheetName, "G", "G", 25); err != nil {
-		return err
+		return "", err
 	}
 
 	// if err = file.SetCellStyle(sheetName, "A1", "G1", styleHeader); err != nil {
@@ -317,7 +348,72 @@ func (s *ListPayments) SaveToExcelStream(fileName string) error {
 	// }
 
 	if err := file.SaveAs(fileName); err != nil {
-		return err
+		return "", err
 	}
-	return nil
+	return fileName, nil
+}
+
+//SaveToJSON save file to json format
+func (s *ListPayments) SaveToJSON(path, templateFile string) (string, error) {
+	if templateFile == "" {
+		templateFile = "file*.xml"
+	}
+	tmpfile, err := ioutil.TempFile(path, templateFile)
+	if err != nil {
+		return "", err
+	}
+	defer tmpfile.Close()
+	fileName := tmpfile.Name()
+
+	parsedJSON, err := json.Marshal(s)
+	if err != nil {
+		return "", err
+	}
+	jsonData, err := Prettyprint(parsedJSON)
+	if err != nil {
+		return "", err
+	}
+	jsonFile, err := os.Create(fileName)
+	if err != nil {
+		return "", err
+	}
+	defer jsonFile.Close()
+
+	jsonFile.Write(jsonData)
+	jsonFile.Close()
+	zap.S().Debugf("JSON data written to %s", fileName)
+
+	return fileName, nil
+}
+
+//Prettyprint Делаем красивый json с отступами
+func Prettyprint(b []byte) ([]byte, error) {
+	var out bytes.Buffer
+	err := json.Indent(&out, b, "", "    ")
+	return out.Bytes(), err
+}
+
+// SaveToXML save file to xml format
+func (s *ListPayments) SaveToXML(path, templateFile string) (string, error) {
+	if templateFile == "" {
+		templateFile = "file*.xml"
+	}
+	tmpfile, err := ioutil.TempFile(path, templateFile)
+	if err != nil {
+		return "", err
+	}
+	defer tmpfile.Close()
+	fileName := tmpfile.Name()
+
+	xmlFile, err := xml.MarshalIndent(s, "", " ")
+	if err != nil {
+		return "", err
+	}
+	err = ioutil.WriteFile(fileName, xmlFile, 0644)
+	if err != nil {
+		return "", err
+	}
+	zap.S().Debugf("XML data written to %s", fileName)
+
+	return fileName, nil
 }

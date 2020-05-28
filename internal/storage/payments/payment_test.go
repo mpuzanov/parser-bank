@@ -1,7 +1,6 @@
 package payments
 
 import (
-	"io/ioutil"
 	"math/rand"
 	"os"
 	"testing"
@@ -15,73 +14,53 @@ const countPayments = 10000
 
 func BenchmarkSaveToExcel(b *testing.B) {
 	testPayments := prepareTestData()
-	fileName := "file1.xlsx"
-	defer os.Remove(fileName)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = testPayments.SaveToExcel(fileName)
+		fileName, _ := testPayments.SaveToExcel(".", "file1*.xlsx")
+		defer os.Remove(fileName)
 	}
 }
 
 func TestSaveToExcel(t *testing.T) {
 	testPayments := prepareTestData()
-	fileName := "file1.xlsx"
-	defer os.Remove(fileName)
-	err := testPayments.SaveToExcel(fileName)
+	fileName, err := testPayments.SaveToExcel(".", "file1*.xlsx")
 	assert.Empty(t, err)
-	if _, err := os.Stat(fileName); os.IsNotExist(err) {
-		t.Errorf("%s does not exist", fileName)
-	}
+	defer os.Remove(fileName)
+	assert.FileExists(t, fileName)
 }
 
 func BenchmarkSaveToExcel2(b *testing.B) {
 	testPayments := prepareTestData()
-	fileName := "file2.xlsx"
-	defer os.Remove(fileName)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = testPayments.SaveToExcel2(fileName)
+		fileName, _ := testPayments.SaveToExcel2(".", "file2*.xlsx")
+		defer os.Remove(fileName)
 	}
 }
 
 func TestSaveToExcel2(t *testing.T) {
 	testPayments := prepareTestData()
-	fileName := "file2.xlsx"
-	defer os.Remove(fileName)
-	err := testPayments.SaveToExcel2(fileName)
+	fileName, err := testPayments.SaveToExcel2(".", "file2*.xlsx")
 	assert.Empty(t, err)
-	if _, err := os.Stat(fileName); os.IsNotExist(err) {
-		t.Errorf("%s does not exist", fileName)
-	}
+	defer os.Remove(fileName)
+	assert.FileExists(t, fileName)
 }
 
 func BenchmarkSaveToExcelStream(b *testing.B) {
 	testPayments := prepareTestData()
-	tmpfile, err := ioutil.TempFile(".", "fileStream*.xlsx")
-	if err != nil {
-		b.Errorf("error create tmp file")
-	}
-	fileName := tmpfile.Name()
-	defer os.Remove(fileName)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = testPayments.SaveToExcelStream(fileName)
+		fileName, _ := testPayments.SaveToExcelStream(".", "fileStream*.xlsx")
+		defer os.Remove(fileName)
 	}
 }
 
 func TestSaveToExcelStream(t *testing.T) {
 	testPayments := prepareTestData()
-	tmpfile, err := ioutil.TempFile(".", "fileStream*.xlsx")
-	if err != nil {
-		t.Errorf("error create tmp file")
-	}
-	fileName := tmpfile.Name()
-	defer os.Remove(fileName)
-	err = testPayments.SaveToExcelStream(fileName)
+	fileName, err := testPayments.SaveToExcelStream(".", "fileStream*.xlsx")
 	assert.Empty(t, err)
-	if _, err := os.Stat(fileName); os.IsNotExist(err) {
-		t.Errorf("%s does not exist", fileName)
-	}
+	defer os.Remove(fileName)
+	assert.FileExists(t, fileName)
 }
 
 func BenchmarkPrepareTestData(b *testing.B) {
@@ -127,4 +106,20 @@ func prepareTestData2() *ListPayments {
 		testPayments.Db = append(testPayments.Db, p)
 	}
 	return &testPayments
+}
+
+func TestSaveToJSON(t *testing.T) {
+	testPayments := prepareTestData()
+	fileName, err := testPayments.SaveToJSON(".", "file*.json")
+	assert.Empty(t, err)
+	defer os.Remove(fileName)
+	assert.FileExists(t, fileName)
+}
+
+func TestSaveToXML(t *testing.T) {
+	testPayments := prepareTestData()
+	fileName, err := testPayments.SaveToXML(".", "file*.xml")
+	assert.Empty(t, err)
+	defer os.Remove(fileName)
+	assert.FileExists(t, fileName)
 }
