@@ -379,7 +379,9 @@ func (s *ListPayments) SaveToJSON(path, templateFile string) (string, error) {
 	}
 	defer jsonFile.Close()
 
-	jsonFile.Write(jsonData)
+	if _, err := jsonFile.Write(jsonData); err != nil {
+		return "", err
+	}
 	jsonFile.Close()
 	zap.S().Debugf("JSON data written to %s", fileName)
 
