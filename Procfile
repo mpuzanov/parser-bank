@@ -1,1 +1,1 @@
-web: parser-bank
+web: parser-bank web_server
