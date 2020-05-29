@@ -1,1 +1,1 @@
-web: HTTP_PORT=5000 parser-bank web_server --config=configs/prod.yaml
+web: parser-bank web_server

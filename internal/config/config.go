@@ -12,8 +12,8 @@ import (
 type Config struct {
 	Log      logger.LogConf `yaml:"log" mapstructure:"log"`
 	HTTPAddr string         `yaml:"http_listen" mapstructure:"http_listn"`
-	Host     string         `yaml:"http_host" mapstructure:"http_host"`
-	Port     string         `yaml:"http_port" mapstructure:"http_port"`
+	Host     string         `yaml:"host" mapstructure:"host"`
+	Port     string         `yaml:"port" mapstructure:"port"`
 	PathTmp  string         `yaml:"path_tmp" mapstructure:"path_tmp"`
 }
 
@@ -23,8 +23,9 @@ func LoadConfig(filePath string) (*Config, error) {
 	viper.AutomaticEnv()
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.SetDefault("log.level", "info")
-	viper.SetDefault("http_host", "0.0.0.0")
-	viper.SetDefault("http_port", "7777")
+	viper.SetDefault("log.format_JSON", "true")
+	viper.SetDefault("host", "0.0.0.0")
+	viper.SetDefault("port", "7777")
 	viper.SetDefault("path_tmp", "./tmp_files/")
 
 	if filePath != "" {
