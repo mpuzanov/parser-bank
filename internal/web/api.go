@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/mpuzanov/parser-bank/internal/storage/payments"
@@ -76,6 +78,7 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 	case "POST":
 		s.logger.Debug("POST")
 
+		req.Body = http.MaxBytesReader(w, req.Body, 6<<20+1024)
 		reader, err := req.MultipartReader()
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
@@ -92,7 +95,14 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 			if part.FileName() == "" {
 				continue
 			}
-
+			buf := bufio.NewReader(part)
+			sniff, _ := buf.Peek(512)
+			contentType := http.DetectContentType(sniff)
+			//s.logger.Sugar().Infof("contentType: %s", contentType)
+			if !strings.Contains(contentType, "text/plain") {
+				http.Error(w, "file type not allowed", http.StatusBadRequest)
+				return
+			}
 			tmpfile, err := ioutil.TempFile(pathUpload, part.FileName())
 			if err != nil {
 				s.logger.Error("TempFile", zap.Error(err))
@@ -105,8 +115,16 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 					s.logger.Error("Remove tmpfile", zap.Error(err))
 				}
 			}()
-			if _, err := io.Copy(tmpfile, part); err != nil {
+			var maxSize int64 = 2 << 20 //2Mb
+			lmt := io.MultiReader(buf, io.LimitReader(part, maxSize-511))
+			written, err := io.Copy(tmpfile, lmt)
+			if err != nil && err != io.EOF {
 				http.Error(w, err.Error(), http.StatusInternalServerError)
+				return
+			}
+			if written > maxSize {
+				os.Remove(tmpfile.Name())
+				http.Error(w, "file size over limit", http.StatusBadRequest)
 				return
 			}
 
