@@ -41,9 +41,11 @@ mod:
 run:
 	@go run ${SOURCE} web_server --config=configs/prod.yaml
 
-run-shell:
-	@go run ${SOURCE} shell --path=test_data
-	@go run ${SOURCE} shell --path=test_data/0_mupspdu_0925.txt
+.PHONY: run-cli
+run-cli:
+	@#go run ${SOURCE} shell --path=test_data
+	@go run ${SOURCE} shell --path=g:\\payments_test -d=false
+	@#GOMAXPROCS=1 go run ${SOURCE} shell --path=test_data/0_mupspdu_0925.txt
 
 .PHONY: dockerbuild
 dockerbuild: 
