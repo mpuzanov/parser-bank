@@ -19,10 +19,17 @@ func TestGetPaymentsVal(t *testing.T) {
 		{
 			desc: "Тест Почта_D7L1A3S5C6F2",
 			line: "6149829;;Пушкинская, 240А, 50;;491;6.38;30.08.2018;",
-			fb: model.FormatBank{Name: "Почта_D7L1A3S5С6F2", CharZag: "#", CharRazd: ";", Dateseparator: ".", Decimalseparator: ".",
-				DataPlatNo: 7, LicNo: 1, AddressNo: 3, SummaNo: 5, CommissNo: 6, FioNo: 2},
+			fb:   FormatDataMap["D7L1A3S5C6F2"],
 			want: model.Payment{Occ: 6149829, Address: "Пушкинская, 240А, 50", Value: 491, Commission: 6.38,
 				Date: time.Date(2018, time.August, 30, 0, 0, 0, 0, time.UTC), Fio: "", PaymentAccount: ""},
+			err: nil,
+		},
+		{
+			desc: "Тест Почта_D7L1A3S5F2",
+			line: "347043;ЗАКИРОВА ФИРАЯ ЯВДАТОВНА;Ижевск, Инкубаторный, д. 6, кв. 6;;389.65;3791;16.01.2020;426032;4260322;",
+			fb:   FormatDataMap["D7L1A3S5F2"],
+			want: model.Payment{Occ: 347043, Address: "Ижевск, Инкубаторный, д. 6, кв. 6", Value: 389.65, Commission: 0,
+				Date: time.Date(2020, time.January, 16, 0, 0, 0, 0, time.UTC), Fio: "ЗАКИРОВА ФИРАЯ ЯВДАТОВНА", PaymentAccount: ""},
 			err: nil,
 		},
 		{
@@ -71,6 +78,14 @@ func TestGetPaymentsVal(t *testing.T) {
 			fb:   FormatDataMap["D1L6A8S9C11F7"],
 			want: model.Payment{Occ: 20040341, Address: "ИЖЕВСК, ВОСТОЧНАЯ, Д. 4, КВ. 34", Value: 10943.21, Commission: 207.92,
 				Date: time.Date(2019, time.October, 1, 0, 0, 0, 0, time.UTC), Fio: "КОРОБОВА СВЕТЛАНА ВЛАДИМИРОВНА", PaymentAccount: ""},
+			err: nil,
+		},
+		{
+			desc: "Тест Сбербанк_D3L6A7S5",
+			line: "8618;8618999V;02/04/2015;9866889;213.06;ЛИЦ. СЧЕТ: 776150849; АДРЕС: г.Ижевск, Красноармейская ул. д.168 кв.17;",
+			fb:   FormatDataMap["D3L6A7S5"],
+			want: model.Payment{Occ: 776150849, Address: "г.Ижевск, Красноармейская ул. д.168 кв.17", Value: 213.06, Commission: 0,
+				Date: time.Date(2015, time.April, 2, 0, 0, 0, 0, time.UTC), Fio: "", PaymentAccount: ""},
 			err: nil,
 		},
 	}

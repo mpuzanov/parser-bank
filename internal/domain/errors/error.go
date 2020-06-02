@@ -14,4 +14,9 @@ var (
 	ErrFormat = ParserError("формат не подходит")
 	// ErrFewFields мало полей
 	ErrFewFields = ParserError("мало полей")
+
+	// ErrCommissionNotFound мало полей
+	ErrCommissionNotFound = ParserError("поле <Commission> не найдено")
+	// ErrCommissionBadFormat мало полей
+	ErrCommissionBadFormat = ParserError("поле <Commission> не правильный формат")
 )

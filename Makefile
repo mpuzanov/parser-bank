@@ -45,7 +45,8 @@ run:
 run-cli:
 	@#go run ${SOURCE} shell --path=test_data
 	@go run ${SOURCE} shell --path=g:\\payments_test -d=false
-	@#GOMAXPROCS=1 go run ${SOURCE} shell --path=test_data/0_mupspdu_0925.txt
+	@#go run ${SOURCE} shell --path='g:/payments_test/new folder/CER18B210420.txt' -d
+	@#GOMAXPROCS=1 go run ${SOURCE} shell --path=test_data/0_mupspdu_0925.txt -d
 
 .PHONY: dockerbuild
 dockerbuild: 

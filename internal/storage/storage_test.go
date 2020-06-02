@@ -5,6 +5,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 )
 
@@ -133,11 +134,11 @@ func TestDetectFormatBank(t *testing.T) {
 		t.Run(tC.desc, func(t *testing.T) {
 			//reader := strings.NewReader(tC.text)
 			got, err := fbStore.detectFormatBank([]byte(tC.text))
-			if err != nil {
-				t.Errorf("%s error: %v", tC.desc, err)
-			}
-			if got.Name != tC.want {
-				t.Errorf("%s, got=%v, expected=%v", tC.desc, got.Name, tC.want)
+			assert.Equal(t, tC.err, err)
+			if err == nil {
+				if got.Name != tC.want {
+					t.Errorf("%s, got=%v, expected=%v", tC.desc, got.Name, tC.want)
+				}
 			}
 
 		})

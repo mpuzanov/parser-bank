@@ -24,7 +24,7 @@ func (s *ListFormatBanks) ReadFile(filePath string, logger *zap.Logger) ([]model
 
 	//Определяем кодировку файла
 	codePage, _ := cpd.FileCodepageDetect(filePath)
-	logger.Info("", zap.String("file", filePath), zap.String("codePage", codePage.String()))
+	logger.Debug("", zap.String("file", filePath), zap.String("codePage", codePage.String()))
 
 	b, err := ioutil.ReadFile(filePath)
 	if err != nil {
@@ -38,7 +38,7 @@ func (s *ListFormatBanks) ReadFile(filePath string, logger *zap.Logger) ([]model
 	if sf == nil {
 		return nil, fmt.Errorf("Формат файла реестра не определён")
 	}
-	logger.Info("Выбрали", zap.String("Формат", sf.Name))
+	logger.Debug("Выбрали", zap.String("Формат", sf.Name))
 
 	//Открываем файл
 	f, err := os.Open(filePath)
@@ -55,17 +55,11 @@ func (s *ListFormatBanks) ReadFile(filePath string, logger *zap.Logger) ([]model
 	totalCommission := 0.0
 	//Открываем ридер с буфером
 	scanner := bufio.NewScanner(readerDecoder)
+
 	for scanner.Scan() {
 		line := strings.TrimSpace(scanner.Text())
-		if len(line) == 0 {
-			continue
-		}
 
-		line = strings.TrimSpace(line)
-		if len(line) < 50 {
-			continue
-		}
-		if strings.HasPrefix(line, sf.CharZag) {
+		if isHeaderFile(line, sf) {
 			continue
 		}
 
@@ -81,7 +75,7 @@ func (s *ListFormatBanks) ReadFile(filePath string, logger *zap.Logger) ([]model
 		return nil, err
 	}
 
-	logger.Sugar().Infof("Итоги: кол-во: %d, сумма: %8.2f, комиссия: %8.2f", len(values), totalValue, totalCommission)
+	logger.Sugar().Debugf("Итоги: кол-во: %d, сумма: %8.2f, комиссия: %8.2f", len(values), totalValue, totalCommission)
 	return values, nil
 }
 
@@ -109,6 +103,8 @@ func (s *ListFormatBanks) checkBankReestr(r []byte, sf *model.FormatBank) (bool,
 	res := false
 	reader := bufio.NewReader(strings.NewReader(string(r)))
 	zap.S().Debugf("Проверяем checkBankReestr: %s, Comma: `%s`, Comment: `%s`", sf.Name, sf.CharRazd, sf.CharZag)
+	countStrOk := 0
+
 	for {
 		line, err := reader.ReadString('\n')
 		if err == io.EOF {
@@ -118,20 +114,25 @@ func (s *ListFormatBanks) checkBankReestr(r []byte, sf *model.FormatBank) (bool,
 			return res, err
 		}
 		line = strings.TrimSpace(line)
-		if len(line) < 50 {
-			continue
-		}
-		if strings.HasPrefix(line, sf.CharZag) {
+
+		if isHeaderFile(line, sf) {
 			continue
 		}
 		_, err = s.getPaymentsVal(line, sf)
 		if err != nil {
 			return res, err
 		}
+		countStrOk++
+		if countStrOk > 5 {
+			break
+		}
+	}
+
+	if countStrOk > 0 {
 		zap.S().Debug("Выбор: ", sf.Name)
 		res = true
-		break
 	}
+
 	return res, err
 }
 
@@ -175,6 +176,9 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank) (mod
 	}
 	tmpStr = strings.TrimSpace(record[sf.SummaNo-1])
 	tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
+	// if tmpStr == "" {
+	// 	return res, errors.ErrFormat
+	// }
 	res.Value, err = strconv.ParseFloat(tmpStr, 64)
 	if err != nil {
 		return res, err
@@ -210,10 +214,17 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank) (mod
 		}
 		tmpStr := strings.TrimSpace(record[sf.CommissNo-1])
 		tmpStr = strings.ReplaceAll(tmpStr, ",", ".")
+		if tmpStr == "" {
+			return res, errors.ErrCommissionNotFound
+		}
 		res.Commission, err = strconv.ParseFloat(tmpStr, 64)
 		if err != nil {
 			return res, err
 		}
+		if !isCommission(res.Commission, res.Value) {
+			return res, fmt.Errorf("Commission=%v Value=%v %w", res.Commission, res.Value, errors.ErrCommissionBadFormat)
+		}
+
 		zap.S().Debug("Commission: ", res.Commission)
 	}
 	// проверяем адрес
@@ -247,4 +258,39 @@ func (s *ListFormatBanks) getPaymentsVal(line string, sf *model.FormatBank) (mod
 	}
 
 	return res, err
+}
+
+// isCommission определение что v может являться комиссией платежа
+func isCommission(v float64, amount float64) bool {
+	result := true
+	maxCommission := amount * 0.1
+	if v >= maxCommission && v > 50 { // если больше 10% и 50 рублей то врятли это комиссия
+		result = false
+	}
+	return result
+}
+
+// isHeaderFile строка является заголовком файла
+func isHeaderFile(line string, sf *model.FormatBank) bool {
+	result := true
+
+	if len(line) == 0 {
+		return result
+	}
+
+	if len(line) < 50 {
+		return result
+	}
+	for _, charZag := range sf.CharZag {
+		if strings.HasPrefix(line, charZag) {
+			return result
+		}
+	}
+
+	record := strings.Split(line, sf.CharRazd)
+	if len(record) < 4 {
+		return result
+	}
+
+	return false
 }

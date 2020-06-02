@@ -54,6 +54,7 @@ func pathStart(cmd *cobra.Command, args []string) {
 		level = "debug"
 	}
 	log = logger.InitLogger(logger.LogConf{Level: level})
+	zap.ReplaceGlobals(log)
 
 	files := []string{}
 	log.Sugar().Info("Обработка: ", pathFiles)
@@ -79,16 +80,14 @@ func pathStart(cmd *cobra.Command, args []string) {
 		log.Sugar().Info("Файлов не выбрано")
 		return
 	}
-	countWorker := countFiles / 3
-	if countWorker > 10 {
-		countWorker = 10
-	}
+	log.Sugar().Infof("Файлов для обработки: %d", countFiles)
+	countWorker := getCountWorker(countFiles)
 
 	store = storageFormat{fb: storage.NewFormatBanks()}
 	if err := store.fb.Open(); err != nil {
 		log.Sugar().Fatalf("error load format banks %v", err)
 	}
-
+	log.Sugar().Debugf("%v", store.fb)
 	chanFile := make(chan string)    // канал обработки файлов
 	chanResults := make(chan result) // канал получения результатов
 	chanStop := make(chan struct{})  // канал для прерывания выполнения горутин
@@ -163,10 +162,22 @@ func (s *storageFormat) worker(id int, files <-chan string, res chan<- result, s
 				return
 			}
 			r := result{fileName: file}
-			r.val, r.err = s.fb.ReadFile(file, zap.L()) //log много выдаёт информации надо упорядочить
+			r.val, r.err = s.fb.ReadFile(file, log) //log много выдаёт информации надо упорядочить  zap.L()
 			res <- r
 			//log.Sugar().Debugf("обработчик %d выполнил задание! Ошибка: %v", id, r.err)
 		}
 
 	}
+}
+
+// getCountWorker определяем кол-во обработчиков для запуска
+func getCountWorker(countFiles int) int {
+	count := countFiles / 3
+	if count == 0 {
+		count = 1
+	}
+	if count > 10 {
+		count = 10
+	}
+	return count
 }

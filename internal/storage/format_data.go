@@ -4,35 +4,29 @@ import (
 	"github.com/mpuzanov/parser-bank/internal/domain/model"
 )
 
-// ListFormats список определяемых форматов
-var ListFormats = map[string]string{
-	"D7L1A3S5C6F2":   "Почта_D7L1A3S5C6F2",      //1
-	"D8L1A3S5С6F2":   "Почта_D8L1A3S5С6F2",      //2
-	"D1L6A7S8C10":    "Сбербанк_D1L6A7S8C10",    //3
-	"D1L6A8S10C12F7": "Сбербанк_D1L6A8S10C12F7", //4
-	"D1L6A8S9C11F7":  "Сбербанк_D1L6A8S9C11F7",  //5
-	"D2L4A5S3":       "Ижкомбанк_D2L4S3A5",      //6
-	"D3L7A8S5C6":     "Сбербанк_D3L7A8S5C6",     //7
-	//"":"",
-	//"":"",
-}
-
 // FormatDataMap список форматов для анализа платежей
 var FormatDataMap = map[string]model.FormatBank{
-	"D7L1A3S5С6F2": {Name: "Почта_D7L1A3S5С6F2", CharZag: "#", CharRazd: ";", Dateseparator: ".", Decimalseparator: ".",
+	"D7L1A3S5C6F2": {Name: "Почта_D7L1A3S5C6F2", Priority: 50, CharZag: []string{"#"}, CharRazd: ";", Dateseparator: ".", Decimalseparator: ".",
 		DataPlatNo: 7, LicNo: 1, AddressNo: 3, SummaNo: 5, CommissNo: 6, FioNo: 2},
-	"D8L1A3S5С6F2": {Name: "Почта_D8L1A3S5С6F2", CharZag: "#", CharRazd: ";", Dateseparator: ".", Decimalseparator: ".",
+	"D8L1A3S5С6F2": {Name: "Почта_D8L1A3S5С6F2", Priority: 100, CharZag: []string{"#"}, CharRazd: ";", Dateseparator: ".", Decimalseparator: ".",
 		DataPlatNo: 8, LicNo: 1, AddressNo: 3, SummaNo: 5, CommissNo: 6, FioNo: 2},
-	"D1L6A7S8C10": {Name: "Сбербанк_D1L6A7S8C10", CharZag: "=", CharRazd: ";", Dateseparator: "-", Decimalseparator: ",",
-		DataPlatNo: 1, LicNo: 6, AddressNo: 7, SummaNo: 8, CommissNo: 10},
-	"D3L7A8S5C6": {Name: "Сбербанк_D3L7A8S5C6", CharZag: "~", CharRazd: ";", Dateseparator: "/", Decimalseparator: ",",
-		DataPlatNo: 3, LicNo: 7, LicName: "ЛИЦЕВОЙ СЧЕТ", AddressNo: 8, AddressName: "АДРЕС", SummaNo: 5, CommissNo: 6},
-	"D1L6A8S10C12F7": {Name: "Сбербанк_D1L6A8S10C12F7", CharZag: "=", CharRazd: ";", Dateseparator: "-", Decimalseparator: ",",
+	"D1L6A8S10C12F7": {Name: "Сбербанк_D1L6A8S10C12F7", Priority: 50, CharZag: []string{"="}, CharRazd: ";", Dateseparator: "-", Decimalseparator: ",",
 		DataPlatNo: 1, LicNo: 6, AddressNo: 8, SummaNo: 10, CommissNo: 12, FioNo: 7},
-	"D2L4S3A5": {Name: "Ижкомбанк_D2L4S3A5", CharZag: "~", CharRazd: ";", Dateseparator: "/", Decimalseparator: ".",
-		DataPlatNo: 2, LicNo: 4, LicName: "ЛИЦ.СЧЕТ", AddressNo: 5, AddressName: "АДРЕС", SummaNo: 3},
-	"D1L6A8S9C11F7": {Name: "Сбербанк_D1L6A8S9C11F7", CharZag: "=", CharRazd: ";", Dateseparator: "-", Decimalseparator: ",",
+	"D1L6A8S9C11F7": {Name: "Сбербанк_D1L6A8S9C11F7", Priority: 100, CharZag: []string{"="}, CharRazd: ";", Dateseparator: "-", Decimalseparator: ",",
 		DataPlatNo: 1, LicNo: 6, AddressNo: 8, SummaNo: 9, CommissNo: 11, FioNo: 7},
+	"D1L6A7S8C10": {Name: "Сбербанк_D1L6A7S8C10", Priority: 100, CharZag: []string{"="}, CharRazd: ";", Dateseparator: "-", Decimalseparator: ",",
+		DataPlatNo: 1, LicNo: 6, AddressNo: 7, SummaNo: 8, CommissNo: 10},
+	"D3L7A8S5C6": {Name: "Сбербанк_D3L7A8S5C6", Priority: 100, CharZag: []string{"~"}, CharRazd: ";", Dateseparator: "/", Decimalseparator: ",",
+		DataPlatNo: 3, LicNo: 7, LicName: "ЛИЦЕВОЙ СЧЕТ", AddressNo: 8, AddressName: "АДРЕС", SummaNo: 5, CommissNo: 6},
+	"D7L1A3S5F2": {Name: "Почта_D7L1A3S5F2", Priority: 100, CharZag: []string{"#"}, CharRazd: ";", Dateseparator: ".", Decimalseparator: ".",
+		DataPlatNo: 7, LicNo: 1, AddressNo: 3, SummaNo: 5, CommissNo: 0, FioNo: 2},
+	"D2L4S3A5": {Name: "Ижкомбанк_D2L4S3A5", Priority: 100, CharZag: []string{"~"}, CharRazd: ";", Dateseparator: "/", Decimalseparator: ".",
+		DataPlatNo: 2, LicNo: 4, LicName: "ЛИЦ.СЧЕТ", AddressNo: 5, AddressName: "АДРЕС", SummaNo: 3},
+	"D3L6A7S5": {Name: "Сбербанк_D3L6A7S5", Priority: 100, CharZag: []string{"~", ";"}, CharRazd: ";", Dateseparator: "/", Decimalseparator: ".",
+		DataPlatNo: 3, LicNo: 6, LicName: "ЛИЦ. СЧЕТ", AddressNo: 7, AddressName: "АДРЕС", SummaNo: 5},
+
+	"D3L6A11S5": {Name: "ЕРЦ_D3L6A11S5", Priority: 100, CharZag: []string{"~", ";"}, CharRazd: ";", Dateseparator: "/", Decimalseparator: ".",
+		DataPlatNo: 3, LicNo: 6, LicName: "ЛИЦ. СЧЕТ", AddressNo: 11, AddressName: "АДРЕС", SummaNo: 5},
 }
 
 // FormatData список форматов для анализа платежей в JSON
@@ -44,11 +38,9 @@ var formatData = `
         "ext": "TXT",
         "code_page": "ASCII",
         "ext_bank": "",
-        "char_zag": "#",
+        "char_zag": ["#"],
         "char_razd": ";",
-        "filename_filter": "*.*",
         "lic_no": 1,
-        "lic_size": 9,
         "data_plat_no": 7,
         "data_plat_size": 10,
         "dateseparator": ".",
@@ -66,7 +58,7 @@ var formatData = `
         "ext": "TXT",
         "code_page": "ASCII",
         "ext_bank": "",
-        "char_zag": "#",
+        "char_zag": ["#"],
         "char_razd": ";",
         "filename_filter": "*.*",
         "lic_no": 1,
@@ -87,7 +79,7 @@ var formatData = `
         "ext": "TXT",
         "code_page": "ASCII",
         "ext_bank": "",
-        "char_zag": "=",
+        "char_zag": ["="],
         "char_razd": ";",
         "filename_filter": "*.*",
         "lic_no": 6,
@@ -110,7 +102,7 @@ var formatData = `
         "ext": "TXT",
         "code_page": "ASCII",
         "ext_bank": "",
-        "char_zag": "=",
+        "char_zag": ["="],
         "char_razd": ";",
         "filename_filter": "*.*",
         "lic_no": 6,
@@ -133,7 +125,7 @@ var formatData = `
         "ext": "TXT",
         "code_page": "ASCII",
         "ext_bank": "",
-        "char_zag": "=",
+        "char_zag": ["="],
         "char_razd": ";",
         "filename_filter": "*.*",
         "lic_no": 6,
@@ -156,7 +148,7 @@ var formatData = `
         "ext": "TXT",
         "code_page": "ASCII",
         "ext_bank": "",
-        "char_zag": "~",
+        "char_zag": ["~"],
         "char_razd": ";",
         "filename_filter": "*.*",
         "lic_no": 4,
@@ -183,7 +175,7 @@ var formatData = `
         "ext": "TXT",
         "code_page": "ASCII",
         "ext_bank": "",
-        "char_zag": "~",
+        "char_zag": ["~"],
         "char_razd": ";",
         "filename_filter": "*.*",
         "lic_no": 7,
@@ -201,6 +193,28 @@ var formatData = `
         "commis_no": 6,
         "rasch_name": null,
         "rasch_no": null
-    }
+    },
+    {
+        "name": "Сбербанк_D3L6A7S5",
+        "visible": true,
+        "ext": "TXT",
+        "code_page": "ASCII",
+        "ext_bank": "",
+        "char_zag": ["~"],
+        "char_razd": ";",
+        "filename_filter": "*.*",
+        "lic_no": 6,
+        "lic_size": 9,
+		"lic_name": "ЛИЦ. СЧЕТ",
+        "data_plat_no": 3,
+        "data_plat_size": 10,
+        "dateseparator": "/",
+        "decimalseparator": ".",
+        "summa_no": 5,
+        "summa_size": 9,
+        "address_no": 6,
+        "address_size": 50,        
+        "address_name": "АДРЕС"
+    }    
 ]}
 `
