@@ -6,6 +6,9 @@ import (
 	"encoding/xml"
 	"io/ioutil"
 	"os"
+	"reflect"
+	"strings"
+	"time"
 	"unicode/utf8"
 
 	"github.com/360EntSecGroup-Skylar/excelize/v2"
@@ -17,13 +20,115 @@ import (
 // ListPayments структура для хранения платежей
 type ListPayments model.Payments
 
+type fieldExcel struct {
+	Name  string
+	With  int
+	Style int
+	Type  string
+}
+
 var (
 	//HeaderDoc список полей в заголовке
 	HeaderDoc = []string{"Occ", "Address", "Date", "Value", "Commission", "Fio", "PaymentAccount"}
+	headerMFC = []string{"№", "Fio", "Date", "Участок", "Occ", "Address", "Value", "Код_услуги", "Commission", "PaymentAccount"}
+
+	headerMap = map[int]fieldExcel{
+		0: {Name: "№", With: 10},
+		1: {Name: "Fio", With: 20},
+		2: {Name: "Date", With: 10, Type: "time.Time"},
+		3: {Name: "Участок", With: 10},
+		4: {Name: "Occ", With: 10, Type: "int"},
+		5: {Name: "Address", With: 40},
+		6: {Name: "Value", With: 10, Type: "float64"},
+		7: {Name: "Код_услуги", With: 10},
+		8: {Name: "Commission", With: 10, Type: "float64"},
+		9: {Name: "PaymentAccount", With: 25},
+	}
 
 	//withHeader ширина колонок
 	withHeader = make(map[string]int)
 )
+
+// SaveToExcel1 сохраняем данные в файл
+func (s *ListPayments) SaveToExcel1(path, templateFile string) (string, error) {
+
+	var file *xlsx.File
+	var sheet *xlsx.Sheet
+	var row *xlsx.Row
+	var cell *xlsx.Cell
+	var err error
+
+	if templateFile == "" {
+		templateFile = "file*.xlsx"
+	}
+	tmpfile, err := ioutil.TempFile(path, templateFile)
+	if err != nil {
+		return "", err
+	}
+	defer tmpfile.Close()
+	fileName := tmpfile.Name()
+
+	file = xlsx.NewFile()
+	sheet, err = file.AddSheet("Sheet1")
+	if err != nil {
+		return "", err
+	}
+	headerFont := xlsx.NewFont(12, "Calibri")
+	headerFont.Bold = true
+	headerFont.Underline = false
+	headerStyle := xlsx.NewStyle()
+	headerStyle.Font = *headerFont
+
+	dataFont := xlsx.NewFont(11, "Calibri")
+	dataStyle := xlsx.NewStyle()
+	dataStyle.Font = *dataFont
+
+	//заполняем заголовок
+	row = sheet.AddRow()
+	for index := 0; index < len(headerMap); index++ {
+		cell = row.AddCell()
+		cell.Value = headerMap[index].Name
+		cell.SetStyle(headerStyle)
+	}
+
+	//данные
+	for index := 0; index < len(s.Db); index++ {
+		row = sheet.AddRow()
+		// добавляем поля в строке
+		values := reflect.ValueOf(s.Db[index])
+		//fields := reflect.TypeOf(s.Db[index])
+		for i := 0; i < len(headerMap); i++ {
+			cell = row.AddCell()
+			f := values.FieldByName(strings.Title(headerMap[i].Name))
+			if f.IsValid() {
+				fieldValue := f.Interface()
+				switch v := fieldValue.(type) {
+				case float64:
+					cell.SetFloatWithFormat(v, "#,##0.00")
+				case int:
+					cell.SetInt(int(v))
+				case time.Time:
+					cell.SetDate(v)
+				default:
+					cell.SetValue(v)
+				}
+				cell.SetStyle(dataStyle)
+			}
+		}
+	}
+	//Устанавливаем ширину колонок
+	for i, col := range sheet.Cols {
+		col.Width = float64(headerMap[i].With)
+		//col.Width = float64(withHeader[headerMFC[i]])
+	}
+
+	err = file.Save(fileName)
+	if err != nil {
+		return "", err
+	}
+
+	return fileName, nil
+}
 
 // SaveToExcel сохраняем данные в файл
 func (s *ListPayments) SaveToExcel(path, templateFile string) (string, error) {
@@ -132,6 +237,106 @@ func (s *ListPayments) SaveToExcel(path, templateFile string) (string, error) {
 		return "", err
 	}
 
+	return fileName, nil
+}
+
+//SaveToExcel22 lib Excelize
+func (s *ListPayments) SaveToExcel22(path, templateFile string) (string, error) {
+	if templateFile == "" {
+		templateFile = "file*.xlsx"
+	}
+	tmpfile, err := ioutil.TempFile(path, templateFile)
+	if err != nil {
+		return "", err
+	}
+	defer tmpfile.Close()
+	fileName := tmpfile.Name()
+	zap.S().Infof("SaveToExcel2: %s", fileName)
+
+	file := excelize.NewFile()
+
+	sheetName := "Sheet1"
+	indexSheet := file.NewSheet(sheetName)
+	file.SetActiveSheet(indexSheet)
+
+	expDate := "dd.MM.yyyy"
+	styleDate, err := file.NewStyle(&excelize.Style{CustomNumFmt: &expDate})
+	if err != nil {
+		return "", err
+	}
+	styleHeader, err := file.NewStyle(`{"font":{"bold":true,"family":"Times New Roman","size":12}}`)
+	if err != nil {
+		return "", err
+	}
+	styleFloat, err := file.NewStyle(`{"number_format": 4}`)
+	if err != nil {
+		return "", err
+	}
+	//Зададим наименование колонок
+	for index := 1; index <= len(headerMap); index++ {
+		axis, err := excelize.CoordinatesToCellName(index, 1)
+		if err != nil {
+			return "", err
+		}
+		if err := file.SetCellValue(sheetName, axis, headerMap[index-1].Name); err != nil {
+			return "", err
+		}
+		if err := file.SetCellStyle(sheetName, axis, axis, styleHeader); err != nil {
+			return "", err
+		}
+		axis, _ = excelize.ColumnNumberToName(index)
+		if err := file.SetColWidth(sheetName, axis, axis, float64(headerMap[index-1].With)); err != nil {
+			return "", err
+		}
+	}
+
+	//данные
+	rowNo := 1
+	for index := 0; index < len(s.Db); index++ {
+		rowNo++
+		// добавляем поля в строке
+		values := reflect.ValueOf(s.Db[index])
+
+		for i := 0; i < len(headerMap); i++ {
+			axis, _ := excelize.CoordinatesToCellName(i+1, rowNo)
+			f := values.FieldByName(strings.Title(headerMap[i].Name))
+			if f.IsValid() {
+				fieldValue := f.Interface()
+				switch v := fieldValue.(type) {
+				case float64:
+					if err := file.SetCellFloat(sheetName, axis, v, 2, 64); err != nil {
+						return "", err
+					}
+					if err := file.SetCellStyle(sheetName, axis, axis, styleFloat); err != nil {
+						return "", err
+					}
+				case int:
+					if err := file.SetCellInt(sheetName, axis, v); err != nil {
+						return "", err
+					}
+				case string:
+					if err := file.SetCellStr(sheetName, axis, v); err != nil {
+						return "", err
+					}
+				case time.Time:
+					if err := file.SetCellValue(sheetName, axis, v); err != nil {
+						return "", err
+					}
+					if err := file.SetCellStyle(sheetName, axis, axis, styleDate); err != nil {
+						return "", err
+					}
+				default:
+					if err := file.SetCellValue(sheetName, axis, v); err != nil {
+						return "", err
+					}
+				}
+			}
+		}
+	}
+
+	if err := file.SaveAs(fileName); err != nil {
+		return "", err
+	}
 	return fileName, nil
 }
 

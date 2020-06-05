@@ -20,6 +20,14 @@ func BenchmarkSaveToExcel(b *testing.B) {
 		defer os.Remove(fileName)
 	}
 }
+func BenchmarkSaveToExcel1(b *testing.B) {
+	testPayments := prepareTestData()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		fileName, _ := testPayments.SaveToExcel1(".", "file1*.xlsx")
+		defer os.Remove(fileName)
+	}
+}
 
 func TestSaveToExcel(t *testing.T) {
 	testPayments := prepareTestData()
@@ -33,16 +41,16 @@ func BenchmarkSaveToExcel2(b *testing.B) {
 	testPayments := prepareTestData()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		fileName, _ := testPayments.SaveToExcel2(".", "file2*.xlsx")
+		fileName, _ := testPayments.SaveToExcel22(".", "file2*.xlsx")
 		defer os.Remove(fileName)
 	}
 }
 
 func TestSaveToExcel2(t *testing.T) {
 	testPayments := prepareTestData()
-	fileName, err := testPayments.SaveToExcel2(".", "file2*.xlsx")
-	assert.Empty(t, err)
+	fileName, err := testPayments.SaveToExcel22(".", "file2*.xlsx")
 	defer os.Remove(fileName)
+	assert.Empty(t, err)
 	assert.FileExists(t, fileName)
 }
 
@@ -116,10 +124,28 @@ func TestSaveToJSON(t *testing.T) {
 	assert.FileExists(t, fileName)
 }
 
+func BenchmarkSaveToJSON(b *testing.B) {
+	testPayments := prepareTestData()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		fileName, _ := testPayments.SaveToJSON(".", "file*.json")
+		defer os.Remove(fileName)
+	}
+}
+
 func TestSaveToXML(t *testing.T) {
 	testPayments := prepareTestData()
 	fileName, err := testPayments.SaveToXML(".", "file*.xml")
 	assert.Empty(t, err)
 	defer os.Remove(fileName)
 	assert.FileExists(t, fileName)
+}
+
+func BenchmarkSaveToXML(b *testing.B) {
+	testPayments := prepareTestData()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		fileName, _ := testPayments.SaveToXML(".", "file*.xml")
+		defer os.Remove(fileName)
+	}
 }
