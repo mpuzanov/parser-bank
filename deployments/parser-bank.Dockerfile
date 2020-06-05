@@ -13,14 +13,15 @@ WORKDIR /opt/${APP_NAME}
 COPY --from=builder /opt/${APP_NAME}/bin/${APP_NAME} ./bin/
 COPY --from=builder /opt/${APP_NAME}/configs/prod.yaml ./configs/
 COPY --from=builder /opt/${APP_NAME}/templates/ ./templates/
+COPY --from=builder /opt/${APP_NAME}/tmp_files/ ./tmp_files/
 
 RUN apk add --no-cache tzdata \
     && apk add -U --no-cache ca-certificates \
-    && mkdir -p /opt/${APP_NAME}/tmp_files \
     && adduser -D -g appuser appuser \
-    && chmod -R 755 ./ 
+    && chmod -R 777 ./ 
     
 EXPOSE 7777
+
 USER appuser
 ENTRYPOINT ["./bin/parser-bank"]
 CMD ["web_server", "-c", "./configs/prod.yaml"]

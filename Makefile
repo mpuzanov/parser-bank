@@ -53,8 +53,8 @@ dockerbuild:
 	docker build -t puzanovma/${APP} -f ./deployments/parser-bank.Dockerfile .
 
 .PHONY: up
-up: # 
-	docker-compose -f ./deployments/docker-compose.yaml up --build
+up: # #--remove-orphans
+	docker-compose -f ./deployments/docker-compose.yaml up --build --detach 
 
 .PHONY: down
 down: 
