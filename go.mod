@@ -1,7 +1,7 @@
 // +heroku goVersion 1.12
 module github.com/mpuzanov/parser-bank
 
-go 1.14
+go 1.12
 
 require (
 	github.com/gorilla/mux v1.7.4
