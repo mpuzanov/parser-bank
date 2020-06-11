@@ -1,9 +1,10 @@
 FROM golang:1.14-alpine as builder
 ENV APP_NAME parser-bank
+RUN apk update && apk add --no-cache git
 WORKDIR /opt/${APP_NAME}
 COPY . .
-#RUN go mod download
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-s -w" -o ./bin/${APP_NAME} ./cmd/${APP_NAME}
+RUN go mod download
+RUN CGO_ENABLED=0 GOOS=linux go build -ldflags="-s -w" -o ./bin/${APP_NAME} ./cmd/${APP_NAME}
 
 FROM alpine:3.11
 ENV APP_NAME parser-bank
