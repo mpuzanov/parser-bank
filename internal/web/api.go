@@ -142,9 +142,7 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		}
 		strFiles += fmt.Sprintf("Итого платежей: %d<br>", len(valuesTotal.Db))
 
-		nameFileXls, err := valuesTotal.SaveToExcel1(pathDownload, "file1*.xlsx")
-		//nameFileXls, err := valuesTotal.SaveToExcel22(pathDownload, "file1*.xlsx")
-		//nameFileXls, err := valuesTotal.SaveToExcelStream(pathDownload, "file1*.xlsx")
+		nameFileXls, err := valuesTotal.SaveToExcel2(pathDownload, "file1*.xlsx")
 		if err != nil {
 			s.logger.Error("SaveToExcel", zap.Error(err))
 		}

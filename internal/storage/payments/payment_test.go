@@ -20,14 +20,6 @@ func BenchmarkSaveToExcel(b *testing.B) {
 		defer os.Remove(fileName)
 	}
 }
-func BenchmarkSaveToExcel1(b *testing.B) {
-	testPayments := prepareTestData()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		fileName, _ := testPayments.SaveToExcel1(".", "file1*.xlsx")
-		defer os.Remove(fileName)
-	}
-}
 
 func TestSaveToExcel(t *testing.T) {
 	testPayments := prepareTestData()
@@ -41,31 +33,14 @@ func BenchmarkSaveToExcel2(b *testing.B) {
 	testPayments := prepareTestData()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		fileName, _ := testPayments.SaveToExcel22(".", "file2*.xlsx")
+		fileName, _ := testPayments.SaveToExcel2(".", "file1*.xlsx")
 		defer os.Remove(fileName)
 	}
 }
 
 func TestSaveToExcel2(t *testing.T) {
 	testPayments := prepareTestData()
-	fileName, err := testPayments.SaveToExcel22(".", "file2*.xlsx")
-	defer os.Remove(fileName)
-	assert.Empty(t, err)
-	assert.FileExists(t, fileName)
-}
-
-func BenchmarkSaveToExcelStream(b *testing.B) {
-	testPayments := prepareTestData()
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
-		fileName, _ := testPayments.SaveToExcelStream(".", "fileStream*.xlsx")
-		defer os.Remove(fileName)
-	}
-}
-
-func TestSaveToExcelStream(t *testing.T) {
-	testPayments := prepareTestData()
-	fileName, err := testPayments.SaveToExcelStream(".", "fileStream*.xlsx")
+	fileName, err := testPayments.SaveToExcel2(".", "file1*.xlsx")
 	assert.Empty(t, err)
 	defer os.Remove(fileName)
 	assert.FileExists(t, fileName)
