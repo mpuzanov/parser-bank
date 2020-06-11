@@ -1,5 +1,5 @@
 build:
     docker:
       web: ./deployments/parser-bank.Dockerfile
-  run:
+run:
     web: ./bin/parser-bank web_server -c ./configs/prod.yaml
