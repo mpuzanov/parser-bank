@@ -1,5 +1,5 @@
 build:
     docker:
-      web: ./deployments/heroku18.Dockerfile
+      web: ./deployments/heroku.Dockerfile
 run:
     web: ./bin/parser-bank web_server
