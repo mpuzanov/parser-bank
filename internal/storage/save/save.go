@@ -1,4 +1,4 @@
-package payments
+package save
 
 import (
 	"bytes"
@@ -49,8 +49,8 @@ func init() {
 	}
 }
 
-// SaveToExcel сохраняем данные в файл
-func (s *ListPayments) SaveToExcel(path, templateFile string) (string, error) {
+// ToExcel сохраняем данные в файл
+func (s *ListPayments) ToExcel(path, templateFile string) (string, error) {
 
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
@@ -129,8 +129,8 @@ func (s *ListPayments) SaveToExcel(path, templateFile string) (string, error) {
 	return fileName, nil
 }
 
-// SaveToExcel2 сохраняем данные в файл
-func (s *ListPayments) SaveToExcel2(path, templateFile string) (string, error) {
+// ToExcel2 сохраняем данные в файл
+func (s *ListPayments) ToExcel2(path, templateFile string) (string, error) {
 
 	var file *xlsx.File
 	var sheet *xlsx.Sheet
@@ -236,8 +236,8 @@ func (s *ListPayments) SaveToExcel2(path, templateFile string) (string, error) {
 	return fileName, nil
 }
 
-//SaveToJSON save file to json format
-func (s *ListPayments) SaveToJSON(path, templateFile string) (string, error) {
+//ToJSON save file to json format
+func (s *ListPayments) ToJSON(path, templateFile string) (string, error) {
 	if templateFile == "" {
 		templateFile = "file*.xml"
 	}
@@ -278,8 +278,8 @@ func Prettyprint(b []byte) ([]byte, error) {
 	return out.Bytes(), err
 }
 
-// SaveToXML save file to xml format
-func (s *ListPayments) SaveToXML(path, templateFile string) (string, error) {
+// ToXML save file to xml format
+func (s *ListPayments) ToXML(path, templateFile string) (string, error) {
 	if templateFile == "" {
 		templateFile = "file*.xml"
 	}

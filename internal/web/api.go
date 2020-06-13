@@ -15,7 +15,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
-	"github.com/mpuzanov/parser-bank/internal/storage/payments"
+	"github.com/mpuzanov/parser-bank/internal/storage/save"
 	"go.uber.org/zap"
 )
 
@@ -86,7 +86,7 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		}
 		strFiles := ""
 		count := 0
-		valuesTotal := payments.ListPayments{}
+		valuesTotal := save.ListPayments{}
 		for {
 			part, err := reader.NextPart()
 			if err == io.EOF {
@@ -142,15 +142,15 @@ func (s *myHandler) UploadData(w http.ResponseWriter, req *http.Request) {
 		}
 		strFiles += fmt.Sprintf("Итого платежей: %d<br>", len(valuesTotal.Db))
 
-		nameFileXls, err := valuesTotal.SaveToExcel2(pathDownload, "file1*.xlsx")
+		nameFileXls, err := valuesTotal.ToExcel2(pathDownload, "file1*.xlsx")
 		if err != nil {
 			s.logger.Error("SaveToExcel", zap.Error(err))
 		}
-		nameFileJSON, err := valuesTotal.SaveToJSON(pathDownload, "file1*.json")
+		nameFileJSON, err := valuesTotal.ToJSON(pathDownload, "file1*.json")
 		if err != nil {
 			s.logger.Error("SaveToJSON", zap.Error(err))
 		}
-		nameFileXML, err := valuesTotal.SaveToXML(pathDownload, "file1*.xml")
+		nameFileXML, err := valuesTotal.ToXML(pathDownload, "file1*.xml")
 		if err != nil {
 			s.logger.Error("SaveToJSON", zap.Error(err))
 		}

@@ -1,4 +1,4 @@
-package payments
+package save
 
 import (
 	"math/rand"
@@ -12,35 +12,38 @@ import (
 
 const countPayments = 10000
 
+var testPayments *ListPayments
+
+func TestMain(m *testing.M) {
+	testPayments = prepareTestData()
+	os.Exit(m.Run())
+}
+
 func BenchmarkSaveToExcel(b *testing.B) {
-	testPayments := prepareTestData()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		fileName, _ := testPayments.SaveToExcel(".", "file1*.xlsx")
+		fileName, _ := testPayments.ToExcel(".", "file1*.xlsx")
 		defer os.Remove(fileName)
 	}
 }
 
 func TestSaveToExcel(t *testing.T) {
-	testPayments := prepareTestData()
-	fileName, err := testPayments.SaveToExcel(".", "file1*.xlsx")
+	fileName, err := testPayments.ToExcel(".", "file1*.xlsx")
 	assert.Empty(t, err)
 	defer os.Remove(fileName)
 	assert.FileExists(t, fileName)
 }
 
 func BenchmarkSaveToExcel2(b *testing.B) {
-	testPayments := prepareTestData()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		fileName, _ := testPayments.SaveToExcel2(".", "file1*.xlsx")
+		fileName, _ := testPayments.ToExcel2(".", "file1*.xlsx")
 		defer os.Remove(fileName)
 	}
 }
 
 func TestSaveToExcel2(t *testing.T) {
-	testPayments := prepareTestData()
-	fileName, err := testPayments.SaveToExcel2(".", "file1*.xlsx")
+	fileName, err := testPayments.ToExcel2(".", "file1*.xlsx")
 	assert.Empty(t, err)
 	defer os.Remove(fileName)
 	assert.FileExists(t, fileName)
@@ -92,35 +95,31 @@ func prepareTestData2() *ListPayments {
 }
 
 func TestSaveToJSON(t *testing.T) {
-	testPayments := prepareTestData()
-	fileName, err := testPayments.SaveToJSON(".", "file*.json")
+	fileName, err := testPayments.ToJSON(".", "file*.json")
 	assert.Empty(t, err)
 	defer os.Remove(fileName)
 	assert.FileExists(t, fileName)
 }
 
 func BenchmarkSaveToJSON(b *testing.B) {
-	testPayments := prepareTestData()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		fileName, _ := testPayments.SaveToJSON(".", "file*.json")
+		fileName, _ := testPayments.ToJSON(".", "file*.json")
 		defer os.Remove(fileName)
 	}
 }
 
 func TestSaveToXML(t *testing.T) {
-	testPayments := prepareTestData()
-	fileName, err := testPayments.SaveToXML(".", "file*.xml")
+	fileName, err := testPayments.ToXML(".", "file*.xml")
 	assert.Empty(t, err)
 	defer os.Remove(fileName)
 	assert.FileExists(t, fileName)
 }
 
 func BenchmarkSaveToXML(b *testing.B) {
-	testPayments := prepareTestData()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		fileName, _ := testPayments.SaveToXML(".", "file*.xml")
+		fileName, _ := testPayments.ToXML(".", "file*.xml")
 		defer os.Remove(fileName)
 	}
 }

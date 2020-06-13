@@ -8,7 +8,7 @@ import (
 
 	"github.com/mpuzanov/parser-bank/internal/domain/model"
 	"github.com/mpuzanov/parser-bank/internal/storage"
-	"github.com/mpuzanov/parser-bank/internal/storage/payments"
+	"github.com/mpuzanov/parser-bank/internal/storage/save"
 	"github.com/mpuzanov/parser-bank/pkg/logger"
 	"go.uber.org/zap"
 
@@ -119,7 +119,7 @@ func pathStart(cmd *cobra.Command, args []string) {
 
 	count := 0
 	countError := 0
-	valuesTotal := payments.ListPayments{}
+	valuesTotal := save.ListPayments{}
 	wgReceivers := sync.WaitGroup{}
 	wgReceivers.Add(1)
 	// получаем результаты
